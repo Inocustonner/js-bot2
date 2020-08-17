@@ -1,0 +1,21 @@
+{
+  "name": "bot1.2",
+  "version": "1.2",
+  "description": "",
+  "manifest_version": 2,
+
+  "permissions": [
+    "background",
+    "activeTab",
+    "tabs",
+    "storage",
+    "http://*/*",
+    "https://*/*"
+  ],
+  
+  "background":
+  {
+    "scripts": ["/back.js"],
+    "persistent": true
+  }
+}
