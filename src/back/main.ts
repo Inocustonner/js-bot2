@@ -9,18 +9,28 @@ const messageManager = async () => {
     processBet(data);
   }
 };
+const on_message = (msg: any) => {
+  console.log(msg);
+  try {
+    // json may fail
+    control_queue.push(JSON.parse(msg.data).events as BetData);
+  }
+  catch (e){
+    console.error(e)
+  }
+}
 
 const run_connection = (
   server_address: string
 ): Promise<Event | CloseEvent> => {
   return new Promise((resolve) => {
-    console.log(`trying to connect to ${server_address}`);
-    let x = new WebSocket(server_address); // needs to be accessible from terminal
+    console.log(`trying to connect to ${server_address}`)
+    let x = new WebSocket(server_address) // needs to be accessible from terminal
     x.onclose = (e: Event | CloseEvent) => {
-      resolve(e);
+      resolve(e)
     };
-    x.onerror = x.onclose;
-    x.onmessage = (msg: any) => control_queue.push(JSON.parse(msg.data)); // json may fail, and this will be fun xD
+    x.onerror = x.onclose
+    x.onmessage = on_message // json may fail, and this will be fun xD
   });
 };
 

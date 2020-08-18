@@ -49,13 +49,15 @@ export class PipeQueue<T> {
   push(el: T): void {
     // set non-empty flag
     this.#arr.push(el);
+    console.debug('pushed', el);
     this.#sem.add()
   }
 
   async get(): Promise<T> {
     return new Promise((resolve: (t: T) => any) => {
+      console.debug(this.#arr)
       this.#sem.acquire()
-        .then(resolve.bind(this.#arr.shift()))
+        .then(() => resolve(this.#arr.shift()))
     })
   }
 }
