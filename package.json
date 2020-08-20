@@ -1,6 +1,6 @@
 {
   "name": "js-bot2",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,11 @@
     "ts-loader": "^8.0.2",
     "typescript": "^3.9.7",
     "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.12"
+    "webpack-cli": "^3.3.12",
+    "xmlhttprequest": "^1.8.0"
+  },
+  "dependencies": {
+    "@types/npm": "^2.0.31",
+    "async-mutex": "^0.2.4"
   }
 }

@@ -1,57 +1,66 @@
-import { PipeQueue } from './Sync'
-import { processBet, BetData } from './Bet'
+import { PipeQueue } from "./Sync"
+import { filterBetData, BetData, BetEvent, betArb, applyEvents} from "./Bet"
 
-var control_queue = new PipeQueue<BetData>();
+var control_queue = new PipeQueue<BetData>()
 
 const messageManager = async () => {
   while (true) {
-    let data = await control_queue.get()
-    processBet(data);
+    let betdata = await control_queue.get()
+    let events = await filterBetData(betdata)
+    console.debug("Clear events", events)
+    for (let event of events) {
+      // if event has been complited stop iteration
+      for (let arb of event.arbs) {
+        event.completed = betArb(arb)
+        if (event.completed) break
+      }
+    }
+    applyEvents(events);
   }
-};
+}
+
 const on_message = (msg: any) => {
-  console.log(msg);
+  console.log(msg)
   try {
     // json may fail
-    control_queue.push(JSON.parse(msg.data).events as BetData);
-  }
-  catch (e){
+    control_queue.push(JSON.parse(msg.data).events as BetData)
+  } catch (e) {
     console.error(e)
   }
 }
 
 const run_connection = (
   server_address: string
-): Promise<Event | CloseEvent> => {
-  return new Promise((resolve) => {
+): Promise<BetEvent | CloseEvent> => {
+  return new Promise(resolve => {
     console.log(`trying to connect to ${server_address}`)
     let x = new WebSocket(server_address) // needs to be accessible from terminal
-    x.onclose = (e: Event | CloseEvent) => {
+    x.onclose = (e: BetEvent | CloseEvent) => {
       resolve(e)
-    };
+    }
     x.onerror = x.onclose
     x.onmessage = on_message // json may fail, and this will be fun xD
-  });
-};
+  })
+}
 
 const async_sleep = (sec: number): Promise<void> => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, sec * 1000);
-  });
-};
+  return new Promise(resolve => {
+    setTimeout(resolve, sec * 1000)
+  })
+}
 
 // window.onload = main
 const main = async () => {
   // eventify(control_queue, 'push', onpushed)
-  console.log("launching bot...");
-  const server_address = "ws://192.168.6.3/wsapi/";
+  console.log("launching bot...")
+  const server_address = "ws://192.168.6.3/wsapi/"
 
   // create a messager "thread"
-  new Promise(messageManager);
+  new Promise(messageManager)
 
   while (true) {
-    await run_connection(server_address).then((e) => console.log(e));
-    await async_sleep(2);
+    await run_connection(server_address).then(e => console.log(e))
+    await async_sleep(2)
   }
-};
-window.onload = main;
+}
+window.onload = main
