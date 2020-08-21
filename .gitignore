@@ -3,3 +3,6 @@
 /extension/*
 !/extension/manifest.json
 copy.bat
+**/.*
+.vscode
+!.gitignore
