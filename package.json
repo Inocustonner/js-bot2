@@ -12,6 +12,7 @@
   "devDependencies": {
     "@babel/core": "^7.11.1",
     "@babel/preset-env": "^7.11.0",
+    "@types/chrome": "^0.0.122",
     "babel-loader": "^8.1.0",
     "path": "^0.12.7",
     "ts-loader": "^8.0.2",
@@ -22,6 +23,8 @@
   },
   "dependencies": {
     "@types/npm": "^2.0.31",
-    "async-mutex": "^0.2.4"
+    "async-mutex": "^0.2.4",
+    "axios": "^0.20.0",
+    "store2": "^2.12.0"
   }
 }

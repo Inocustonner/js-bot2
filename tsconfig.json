@@ -8,7 +8,10 @@
     "jsx": "react",
     "allowJs": true,
     "lib": ["es7", "dom", "es2020"],
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "types": [
+      "chrome"
+    ]
   },
   "include": [
     "src/**/*",

@@ -2,3 +2,4 @@
 /node_modules/
 /extension/*
 !/extension/manifest.json
+copy.bat

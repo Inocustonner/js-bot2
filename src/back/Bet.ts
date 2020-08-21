@@ -1,4 +1,7 @@
 import { Mutex } from 'async-mutex'
+import { local as storage } from 'store2'
+import { default as axios } from 'axios'
+import { createTab, closeTab } from './ChromeShortcuts'
 
 interface Bet {
   bookmaker: string
@@ -102,7 +105,27 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
   }
 }
 
+const betOlimp = async (): Promise<boolean> => {
+  return new Promise(r => r(false))
+}
+
 /* Returns success of betting */
-export const betArb = (arb: Arb): boolean => {
-  return false
+export const betArb = async ({ bets }: Arb): Promise<boolean> => {
+  let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
+  try {
+    let response = await axios.get(OlimpBet.url)
+    if (response.status != 200) throw Error(`Return status !=200: ${response.status}`)
+    let booker_url = response.data.match(/(?<=direct_link = ').+(?=')/g)[0]
+    console.log('Bookmaker url: ', booker_url)
+    let tabid = (await createTab(booker_url)).id
+    
+    let result = await betOlimp()
+
+    closeTab(tabid)
+    return result
+  }
+  catch (e){
+    console.error("Error in request:", e)
+    return new Promise(r => r(false));
+  }
 }

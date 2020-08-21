@@ -1,5 +1,6 @@
 import { PipeQueue } from "./Sync"
 import { filterBetData, BetData, BetEvent, betArb, applyEvents} from "./Bet"
+import { initializeSettings } from './Settings'
 
 var control_queue = new PipeQueue<BetData>()
 
@@ -11,7 +12,7 @@ const messageManager = async () => {
     for (let event of events) {
       // if event has been complited stop iteration
       for (let arb of event.arbs) {
-        event.completed = betArb(arb)
+        event.completed = await betArb(arb)
         if (event.completed) break
       }
     }
@@ -54,7 +55,8 @@ const main = async () => {
   // eventify(control_queue, 'push', onpushed)
   console.log("launching bot...")
   const server_address = "ws://192.168.6.3/wsapi/"
-
+  
+  initializeSettings()
   // create a messager "thread"
   new Promise(messageManager)
 
