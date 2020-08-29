@@ -13,8 +13,7 @@
     "https://*/*"
   ],
   
-  "background":
-  {
+  "background": {
     "scripts": ["/back.js"],
     "persistent": true
   }

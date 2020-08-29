@@ -26,7 +26,7 @@ var config = {
 var olimpConfig = Object.assign({}, config, {
   name: "olimp",
   entry: {
-    olimp: path.resolve("./src/content_script/olimp.js"),
+    olimp: path.resolve("./src/content_script/olimp.ts"),
   },
   output: {
     path: __dirname + `/${out_dir}/content_script`,
