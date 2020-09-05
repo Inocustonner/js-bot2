@@ -3,6 +3,13 @@ import { local as storage } from "store2"
 import { default as axios } from "axios"
 import { createTab, closeTab } from "./ChromeShortcuts"
 
+interface BettingInfo {
+  outcome: string,
+  section: string,
+  koef: number,
+  stake: number,
+}
+
 interface Bet {
   bookmaker: string
   outcome: string
@@ -105,7 +112,7 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
   }
 }
 
-const betOlimp = async (betinfo: Bet): Promise<boolean> => {
+const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
   let handler = function (
     msg: any, _:
     chrome.runtime.MessageSender,
@@ -116,8 +123,8 @@ const betOlimp = async (betinfo: Bet): Promise<boolean> => {
         this.r(true)
         break
       case "getInfo":
-        console.info("betinfo", betinfo)
-        ret({ koef: this.betinfo.koef, outcome: this.betinfo.outcome })
+        console.info("bettingInfo", betinfo)
+        ret(betinfo)
         break
     }
   }
@@ -132,9 +139,11 @@ const betOlimp = async (betinfo: Bet): Promise<boolean> => {
 
 /* Returns success of betting */
 export const betArb = async ({ bets }: Arb): Promise<boolean> => {
-  let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
+  let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[ 0 ]
   try {
     let response = await axios.get(OlimpBet.url)
+    let determinator_future = axios.get(storage.get('server_host') + `api/determinators/determine?outcome=${OlimpBet.outcome}`)
+
     if (response.status != 200)
       throw Error(`Return status !=200: ${response.status}`)
     // save for investigation
@@ -149,13 +158,22 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     console.info("Bookmaker url: ", booker_url)
     let tabid = (await createTab(booker_url)).id
     chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
-    
-    let result = await betOlimp(OlimpBet)
+
+    let determinator = JSON.parse((await determinator_future).data)
+    if (determinator.error) {
+      throw Error(`Error in determing outcome: ${determinator.error}`)
+    }
+    let betInfo: BettingInfo = {
+      ...determinator,
+      koef: OlimpBet.koef,
+      stake: storage.get('stake')
+    }
+    let result = await betOlimp(betInfo)
 
     closeTab(tabid)
     return result
   } catch (e) {
-    console.error("Error in request:", e)
+    console.error(e)
     return new Promise(r => r(false))
   }
 }

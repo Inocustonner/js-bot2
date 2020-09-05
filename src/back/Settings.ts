@@ -20,12 +20,20 @@ const settings_receiver = (): void => {
     (msg: any,
       sender: chrome.runtime.MessageSender,
       respond: ((..._: any) => void)) => {
-      console.assert(typeof msg ===  "object")
+      console.assert(typeof msg === "object")
+      return; // to early
+
       console.log('applying the following changes', msg)
       for (let key in msg) {
         storage.set(key, msg[key])
       }
   })
+}
+
+const add_setting_if_not_exists = (setting: string, value: any): void => {
+  if (!storage.has(setting)) {
+    storage.set(setting, value)
+  }
 }
 
 export const initializeSettings = () => {
@@ -34,4 +42,6 @@ export const initializeSettings = () => {
       storage.set(key, default_settings[key])
     }
   }
+  storage.set('server_host', 'http://192.168.6.3/')
+  add_setting_if_not_exists('stake', 10)
 }
