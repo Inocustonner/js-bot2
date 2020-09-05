@@ -54,7 +54,11 @@ const ThrowDeterminatorError = (
 }
 
 const findBetElem = (section: string, outcome: string): HTMLElement => {
-  const section_regex = new RegExp(section)
+  /* Runtime vars */
+  const team1 = "Team1" // get team name
+  const team2 = "Team2" // get team name
+
+  const section_regex = new RegExp(eval(section))
   const sections: HTMLElement[] = filterMatchAll(
     getSections(),
     section_regex,
