@@ -12,7 +12,8 @@ interface BookerSettings extends StringMap {
 const default_settings: BookerSettings = {
   login: '',
   pwd: '',
-  mirror: ''
+  mirror: '',
+  debug_olimp: true
 }
 
 const settings_receiver = (): void => {
@@ -43,5 +44,6 @@ export const initializeSettings = () => {
     }
   }
   storage.set('server_host', 'http://192.168.6.3/')
+
   add_setting_if_not_exists('stake', 10)
 }

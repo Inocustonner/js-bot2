@@ -4,10 +4,11 @@ import { default as axios } from "axios"
 import { createTab, closeTab } from "./ChromeShortcuts"
 
 interface BettingInfo {
-  outcome: string,
-  section: string,
-  koef: number,
+  outcome: string
+  section: string
+  koef: number
   stake: number,
+  rawoutcome: string
 }
 
 interface Bet {
@@ -114,13 +115,23 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
 
 const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
   let handler = function (
-    msg: any, _:
-    chrome.runtime.MessageSender,
-    ret?: (...args: any) => void) {
-    
+    msg: any,
+    _: chrome.runtime.MessageSender,
+    ret?: (...args: any) => void
+  ) {
+    let comment
+    if (typeof msg == "object") {
+      comment = msg.comment
+      msg = msg.status
+    }
+
     switch (msg) {
       case "success":
         this.r(true)
+        break
+      case "fail":
+        console.warn(comment)
+        this.r(false)
         break
       case "getInfo":
         console.info("bettingInfo", betinfo)
@@ -131,18 +142,20 @@ const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
   /* DONT EVEN LOOK BELOW, JUST LEAVE IT AS IT IS */
   let nh: any
   return new Promise<boolean>(r => {
-    nh = handler.bind({ betinfo: betinfo, r: r})
+    nh = handler.bind({ betinfo: betinfo, r: r })
     chrome.runtime.onMessage.addListener(nh)
-  }).finally(
-    () => chrome.runtime.onMessage.removeListener(nh))
+  }).finally(() => chrome.runtime.onMessage.removeListener(nh))
 }
 
 /* Returns success of betting */
 export const betArb = async ({ bets }: Arb): Promise<boolean> => {
-  let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[ 0 ]
+  let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
   try {
     let response = await axios.get(OlimpBet.url)
-    let determinator_future = axios.get(storage.get('server_host') + `api/determinators/determine?outcome=${OlimpBet.outcome}`)
+    let determinator_future = axios.get(
+      storage.get("server_host") +
+        `api/determinators/determine?outcome=${OlimpBet.outcome}`
+    )
 
     if (response.status != 200)
       throw Error(`Return status !=200: ${response.status}`)
@@ -150,7 +163,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     // axios.post(`http://192.168.6.3/api/store_data?dir=olimpUrlPages&key=${Date.now()}.html`, response.data)
     let $t = response.data.match(/(?<=direct_link = ').+(?=')/g)
     if (!$t) {
-      console.info('No event url')
+      console.info("No event url")
       return new Promise(r => r(false))
     }
 
@@ -159,14 +172,20 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     let tabid = (await createTab(booker_url)).id
     chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
 
-    let determinator = JSON.parse((await determinator_future).data)
+    let determinator = (await determinator_future).data
+
+    if (storage.get("debug_olimp") && determinator.error)
+      determinator = { section: "`.`", outcome: "`.`" }
+
     if (determinator.error) {
-      throw Error(`Error in determing outcome: ${determinator.error}`)
+      throw Error(`Error in determing outcome: ${determinator.error.reason}`)
     }
+
     let betInfo: BettingInfo = {
       ...determinator,
       koef: OlimpBet.koef,
-      stake: storage.get('stake')
+      stake: storage.get("stake"),
+      rawoutcome: OlimpBet.outcome
     }
     let result = await betOlimp(betInfo)
 

@@ -1,42 +1,52 @@
-import { map } from "jquery"
 import * as $ from "jquery"
 
+const koef_class_name = "bet_sel koefs"
+
 interface OutcomePair {
-  outcome: string,
+  outcome: string
   koefEl: HTMLElement
 }
 
 const getSections = (mid: string): HTMLElement[] => {
-  return $(`#odd${mid}>div`).children('b').toArray()
+  return $(`#odd${mid}>div`).children("b").toArray()
 }
 
+
 const makePairs = (nobrs: JQuery): OutcomePair[] => {
-  console.debug('Making pairs from', nobrs.toArray())
+  console.debug("Making pairs from", nobrs.toArray())
   const makePair = (nobr: HTMLElement): OutcomePair[] => {
     // if this is a .googleStatIssue > .googleStatIssueName > singleBet structure
-    if (nobr.querySelector('.bet_sel.koefs').previousElementSibling) {
-      let koefEl = nobr.querySelector('.bet_sel.koefs') as HTMLElement
-      let outcome = (koefEl.previousElementSibling as HTMLElement).innerText
-      return [{ outcome: outcome, koefEl: koefEl }]
+    let parent = nobr.querySelector(".bet_sel.koefs").parentElement
+    let outcomes: OutcomePair[] = []
+
+    let outcome = ""
+    let nodes = parent.childNodes
+    // outcome for koef element = all text before koef element
+    for (let i = 0; i < nodes.length; ++i) {
+      let node: Node = nodes[i]
+      if (
+        node.nodeName == "SPAN" &&
+        (node as HTMLElement).className == koef_class_name
+      ) {
+        outcomes.push({
+          outcome: outcome.trim().slice(null, -2),
+          koefEl: node as HTMLElement,
+        })
+        outcome = ""
+      } else if (node.nodeName != "#comment") outcome += node.textContent
     }
-    else {
-      return $('.bet_sel.koefs').map(
-        (i: number, elem: HTMLElement) => {
-          let outcome = elem.previousSibling.textContent.trim().slice(null, -2)
-          return { outcome: outcome, koefEl: elem } as OutcomePair
-        }
-      ).toArray()
-    }
+    return outcomes
   }
-  return map(nobrs.toArray(), makePair).flat()
+  let nobrs_ = nobrs.toArray()
+  console.debug(nobrs_)
+  return nobrs_.map(makePair).flat()
 }
 
 const getOutcomes = (section: JQuery): OutcomePair[] => {
-  if (section.prop('tagName') == "DIV") {
-    return makePairs(section.children('nobr'))
-  }
-  else {
-    return makePairs(section.next().nextUntil('br', 'nobr'))
+  if (section.prop("tagName") == "DIV") {
+    return makePairs(section.children("nobr"))
+  } else {
+    return makePairs(section.next().nextUntil("br", "nobr"))
   }
 }
 
@@ -50,27 +60,25 @@ const filterMatch = <T>(
 
 const ThrowDeterminatorError = (
   regex_str: string,
-  elements: HTMLElement[],
+  elements: string[],
   determinator_for: string
 ) => {
   if (elements.length > 1) {
-    let matched_sections: string = elements
-      .map(e => e.innerText.trim())
-      .join(", ")
-    throw Error(
-      `Ambiguous returns. ${determinator_for} determinator '${regex_str}' matched: ${matched_sections}`
-    )
+    let matched_sections: string = elements.join(", ")
+    throw `Ambiguous returns. '${determinator_for}' determinator '${regex_str}' matched: ${matched_sections}`
   } else
-    throw Error(
-      `${determinator_for} determinator '${regex_str}' matched nothing`
-    )
+    throw `'${determinator_for}' determinator '${regex_str}' matched nothing`
 }
 
 const get_teams = (mid: string): string[] => {
-  return $(`#match_live_name_${mid}`).text().trim().split(' - ')
+  return $(`#match_live_name_${mid}`).text().trim().split(" - ")
 }
 
-const get_section = (section: string, section_regex: RegExp, mid: string): JQuery => {
+const get_section = (
+  section: string,
+  section_regex: RegExp,
+  mid: string
+): JQuery => {
   const sections: HTMLElement[] = filterMatch(
     getSections(mid),
     section_regex,
@@ -78,41 +86,39 @@ const get_section = (section: string, section_regex: RegExp, mid: string): JQuer
   )
   if (sections.length == 1) {
     return $(sections[0])
-  }
-  else
-    ThrowDeterminatorError(section, sections, "Section")
+  } else ThrowDeterminatorError(section, sections.map(e => e.innerText.trim().slice(null, -1)), "Section")
 }
 
-export const findBetElem = (section: string, outcome: string, mid: string): HTMLElement => {
-  debugger
+export const findBetElem = (
+  section: string,
+  outcome: string,
+  mid: string
+): HTMLElement => {
   /* Runtime vars */
   // IMPORTANT: all regexes should eval it this context, because some of them contain reference variables
   const [team1, team2] = get_teams(mid)
   let section_el: JQuery
 
   const section_regex = new RegExp(eval(section), 'i') // case-insencetive
-
   // add if section == '' then pick header section bets
   // otherwise we know that this is the header section(section with no name)
   if (section) {
     section_el = get_section(section, section_regex, mid)
-  }
-  else {
+  } else {
     section_el = $(`#odd${mid}`)
   }
-  
+
   // if found section
-  const oucome_regex = new RegExp(outcome)
+  const oucome_regex = new RegExp(eval(outcome), 'i')
   let raw_outcomes = getOutcomes(section_el)
   console.debug(raw_outcomes)
-  
-  const outcomes = filterMatch(
+
+  const outcomes: OutcomePair[] = filterMatch(
     raw_outcomes,
     oucome_regex,
     (e: OutcomePair) => e.outcome
   )
   // if found outcome
-  if (outcomes.length != 1)
-    ThrowDeterminatorError(outcome, outcomes, "Outcome")
-  return outcomes[0]
+  if (outcomes.length != 1) ThrowDeterminatorError(outcome, outcomes.map(e => e.outcome), "Outcome")
+  return outcomes[0].koefEl
 }
