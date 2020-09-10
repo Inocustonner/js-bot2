@@ -1,5 +1,5 @@
 import { PipeQueue } from "./Sync"
-import { filterBetData, BetData, BetEvent, betArb, applyEvents} from "./Bet"
+import { filterBetData, BetData, BetEvent, betArb, applyEvents } from "./Bet"
 import { initializeSettings } from './Settings'
 import './Actions'
 
@@ -21,7 +21,7 @@ const messageManager = async () => {
       }
       if (event.arbs.length == 0)
         skipped += 1
-      console.info(`${i+=1}/${events_cnt} events processed`)
+      console.info(`${i += 1}/${events_cnt} events processed`)
     }
     console.info(`skipped ${skipped}`)
     applyEvents(events);
@@ -62,7 +62,7 @@ const main = async () => {
   // eventify(control_queue, 'push', onpushed)
   console.log("launching bot...")
   const server_address = "ws://192.168.6.3/wsapi/"
-  
+
   initializeSettings()
   // create a messager "thread"
   new Promise(messageManager)

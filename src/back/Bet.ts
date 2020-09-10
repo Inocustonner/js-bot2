@@ -169,8 +169,6 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
 
     let booker_url = $t[0]
     console.info("Bookmaker url: ", booker_url)
-    let tabid = (await createTab(booker_url)).id
-    chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
 
     let determinator = (await determinator_future).data
 
@@ -187,6 +185,8 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
       stake: storage.get("stake"),
       rawoutcome: OlimpBet.outcome
     }
+    let tabid = (await createTab(booker_url)).id
+    chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
     let result = await betOlimp(betInfo)
 
     closeTab(tabid)

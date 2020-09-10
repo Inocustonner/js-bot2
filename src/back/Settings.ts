@@ -13,7 +13,7 @@ const default_settings: BookerSettings = {
   login: '',
   pwd: '',
   mirror: '',
-  debug_olimp: true
+  debug_olimp: false
 }
 
 const settings_receiver = (): void => {
