@@ -128,6 +128,7 @@ const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
     switch (msg) {
       case "success":
         this.r(true)
+        console.info("%cStonks📈", "background:#00ab66; color:#fff; font-size: 14px; font-weight: bold;" )
         break
       case "fail":
         console.warn(comment)

@@ -28,7 +28,7 @@ const finish = (status: ReturnStatus = { status: "success" }) => {
 }
 
 const submit = async (submit_butt: HTMLElement, clear_butt: HTMLElement) => {
-  const clearBasket = () => clear_butt?.click()
+  const clearBasket = () => clear_butt.click()
   const warning_info_timeout = 5
   submit_butt.click()
   try {
@@ -36,7 +36,6 @@ const submit = async (submit_butt: HTMLElement, clear_butt: HTMLElement) => {
   } catch (e) {
     let msg = $('#error-wraper-betslip').text()
     clearBasket()
-
     throw msg
   }
 }
@@ -49,6 +48,8 @@ const on_loaded = async () => {
   console.info("BettingInfo", outcome, section, koef, stake)
   await sleep(5)
 
+  let clear_b: HTMLElement
+  
   try {
     // Get koef element and mark it in red for logging
     let koefEl: HTMLElement = findBetElem(section, outcome, mid)
@@ -80,10 +81,12 @@ const on_loaded = async () => {
     input.value = stake
     // get buttons and try to submit
     let submit_b = document.querySelector(submit_button_selector) as HTMLElement
-    let clear_b = document.querySelector(clear_button_selector) as HTMLElement
+    clear_b = document.querySelector(clear_button_selector) as HTMLElement
+    
     await submit(submit_b, clear_b)
 
   } catch (error) {
+    clear_b?.click()
     logTableAndParamsOnServer(mid, outcome, section, koef, stake, rawoutcome)
     console.debug(error)
     if (typeof error == "object") error = error.stack
