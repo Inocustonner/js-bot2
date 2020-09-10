@@ -177,7 +177,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
       determinator = { section: "`.`", outcome: "`.`" }
 
     if (determinator.error) {
-      throw Error(`Error in determing outcome: ${determinator.error.reason}`)
+      throw Error(`Error in determing outcome for ${OlimpBet.outcome}: ${determinator.error.reason}`)
     }
 
     let betInfo: BettingInfo = {

@@ -74,7 +74,7 @@ const on_loaded = async () => {
     // if input is not found, then we are in express bet.
     if (input == null) {
       // switch back to ordinar
-      $('.busket-nav>#bn1').trigger('click')
+      (document.querySelector('.busket-nav>#bn1') as HTMLElement).click()
       await onExists(stake_input_selector, basketEl, 5)
       input = basketEl.querySelector(stake_input_selector) as HTMLInputElement
     }
