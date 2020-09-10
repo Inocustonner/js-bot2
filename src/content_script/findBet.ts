@@ -102,7 +102,7 @@ export const findBetElem = (
   const section_regex = new RegExp(eval(section), 'i') // case-insencetive
   // add if section == '' then pick header section bets
   // otherwise we know that this is the header section(section with no name)
-  if (section) {
+  if (section != "``") {
     section_el = get_section(section, section_regex, mid)
   } else {
     section_el = $(`#odd${mid}`)
