@@ -29,7 +29,7 @@ const finish = (status: ReturnStatus = { status: "success" }) => {
 
 const submit = async (submit_butt: HTMLElement, clear_butt: HTMLElement) => {
   const clearBasket = () => clear_butt.click()
-  const warning_info_timeout = 5
+  const warning_info_timeout = 3
   submit_butt.click()
   try {
     await onExists('#error-wraper-betslip>.warning-infoblock .accept_icon', null, warning_info_timeout) 
@@ -68,6 +68,9 @@ const on_loaded = async () => {
       null,
       10
     )
+    // get clear button
+    clear_b = document.querySelector(clear_button_selector) as HTMLElement
+
     // fill the basket
     let basketEl: HTMLElement = elemInBasket.parentElement;
     let input = basketEl.querySelector(stake_input_selector) as HTMLInputElement
@@ -80,9 +83,8 @@ const on_loaded = async () => {
     }
     input.value = stake
     // get buttons and try to submit
-    let submit_b = document.querySelector(submit_button_selector) as HTMLElement
-    clear_b = document.querySelector(clear_button_selector) as HTMLElement
     
+    let submit_b = document.querySelector(submit_button_selector) as HTMLElement
     await submit(submit_b, clear_b)
 
   } catch (error) {
