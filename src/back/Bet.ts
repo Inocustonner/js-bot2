@@ -84,7 +84,6 @@ export const applyEvents = (events: BetEvent[]): void => {
   console.debug("after applyEvents", tmap)
 }
 
-// refactor
 export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
   console.debug(data, "\nfiltered with\n", tmap)
   const release = await tmap.rw_mut.acquire()
@@ -101,12 +100,6 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
           ),
         } as BetEvent)
     )
-    // for (let event of data) {
-    //   if (tmap.has(event.id)) {
-    //     event.arbs = event.arbs.filter(arb => tmap.get(event.id).arbs.every(earb => earb.id != arb.id))
-    //   }
-    //   events.push({ ...event, completed: false || tmap.get(event.id)?.completed })
-    // }
     return new Promise(r => r(events))
   } finally {
     release()
@@ -114,7 +107,7 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
 }
 
 const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
-  let handler = function (
+  let handler = function(
     msg: any,
     _: chrome.runtime.MessageSender,
     ret?: (...args: any) => void
@@ -128,7 +121,7 @@ const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
     switch (msg) {
       case "success":
         this.r(true)
-        console.info("%cStonks📈", "background:#00ab66; color:#fff; font-size: 14px; font-weight: bold;" )
+        console.info("%cStonks📈", "background:#00ab66; color:#fff; font-size: 14px; font-weight: bold;" 
         break
       case "fail":
         console.warn(comment)
@@ -137,6 +130,11 @@ const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
       case "getInfo":
         console.info("bettingInfo", betinfo)
         ret(betinfo)
+        break
+      case "getAuth":
+        console.info("returning auth")
+        ret({ login: storage.get('login'), pwd: storage.get('pwd') })
+
         break
     }
   }
@@ -155,7 +153,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     let response = await axios.get(OlimpBet.url)
     let determinator_future = axios.get(
       storage.get("server_host") +
-        `api/determinators/determine?outcome=${OlimpBet.outcome}`
+      `api/determinators/determine?outcome=${OlimpBet.outcome}`
     )
 
     if (response.status != 200)

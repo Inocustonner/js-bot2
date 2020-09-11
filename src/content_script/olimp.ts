@@ -10,7 +10,7 @@ const submit_button_selector = '.busket-pay>[name=formsubmit]'
 const stake_input_selector = '[name=singlebet_sum0]'
 const clear_button_selector = '.clearAllbasket'
 
-const checkKoef = false
+const checkKoef = true
 
 const sendRequest = (msg: any): Promise<any> => {
   return new Promise(r => {
@@ -32,7 +32,7 @@ const submit = async (submit_butt: HTMLElement, clear_butt: HTMLElement) => {
   const warning_info_timeout = 3
   submit_butt.click()
   try {
-    await onExists('#error-wraper-betslip>.warning-infoblock .accept_icon', null, warning_info_timeout) 
+    await onExists('#error-wraper-betslip>.warning-infoblock .accept_icon', null, warning_info_timeout)
   } catch (e) {
     let msg = $('#error-wraper-betslip').text()
     clearBasket()
@@ -41,15 +41,18 @@ const submit = async (submit_butt: HTMLElement, clear_butt: HTMLElement) => {
 }
 
 const on_loaded = async () => {
+
+  await ensure_authorization();
+
   const { outcome, section, koef, stake, rawoutcome } = await sendRequest(
     "getInfo"
   )
-  
+
   console.info("BettingInfo", outcome, section, koef, stake)
   await sleep(5)
 
   let clear_b: HTMLElement
-  
+
   try {
     // Get koef element and mark it in red for logging
     let koefEl: HTMLElement = findBetElem(section, outcome, mid)
@@ -83,7 +86,7 @@ const on_loaded = async () => {
     }
     input.value = stake
     // get buttons and try to submit
-    
+
     let submit_b = document.querySelector(submit_button_selector) as HTMLElement
     await submit(submit_b, clear_b)
 
@@ -130,7 +133,7 @@ const onExists = (
   })
 }
 
-onExists(`#odd${mid}`, $(".bing-table-width").get(0), 15)
+onExists(`#odd${mid}`, $(".bing-table-width").get(0), 8)
   .then(on_loaded)
   .catch(() =>
     finish({
