@@ -146,6 +146,7 @@ const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
   }).finally(() => chrome.runtime.onMessage.removeListener(nh))
 }
 
+
 /* Returns success of betting */
 export const betArb = async ({ bets }: Arb): Promise<boolean> => {
   let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
