@@ -1,27 +1,55 @@
 // common configuration
-const path = require('path');
-const out_dir = 'extension'
+const path = require("path")
+const HtmlWebPackPlugin = require("html-webpack-plugin")
+
+const out_dir = "extension"
 
 var config = {
   module: {
     rules: [
       {
         test: /\.ts$/,
-        use: 'ts-loader',
-        exclude: /node_modules/
+        use: ["ts-loader"],
+        exclude: /node_modules/,
       },
       {
         test: /\.js$/,
-        use: 'babel-loader',
-        exclude: /node_modules/
+        use: "babel-loader",
+        exclude: /node_modules/,
       },
+      {
+        test: /\.html$/,
+        use: "html-loader",
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
+      }
     ],
   },
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: [".ts", ".js"],
   },
-  devtool: "inline-source-map"
+  devtool: "inline-source-map",
+  plugins: [],
 }
+
+var popupConfig = Object.assign({}, config, {
+  name: "popup",
+  entry: {
+    popup: path.resolve("./src/popup/popup.ts"),
+  },
+  output: {
+    path: __dirname + `/${out_dir}/popup`,
+    filename: "[name].js",
+  },
+  plugins: [
+    new HtmlWebPackPlugin({
+      template: "./src/popup/popup.html",
+      filename: "./popup.html",
+    }),
+  ],
+})
 
 var olimpConfig = Object.assign({}, config, {
   name: "olimp",
@@ -30,8 +58,8 @@ var olimpConfig = Object.assign({}, config, {
   },
   output: {
     path: __dirname + `/${out_dir}/content_script`,
-    filename: '[name].js'
-  }
+    filename: "[name].js",
+  },
 })
 
 var backConfig = Object.assign({}, config, {
@@ -41,12 +69,8 @@ var backConfig = Object.assign({}, config, {
   },
   output: {
     path: __dirname + `/${out_dir}`,
-    filename: "[name].js"
-  }
+    filename: "[name].js",
+  },
 })
 
-
-module.exports = [
-  backConfig,
-  olimpConfig
-];
+module.exports = [backConfig, olimpConfig, popupConfig]

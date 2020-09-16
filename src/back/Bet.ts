@@ -1,7 +1,7 @@
 import { Mutex } from "async-mutex"
 import { local as storage } from "store2"
 import { default as axios } from "axios"
-import { createTab, closeTab } from "./ChromeShortcuts"
+import { createTab, closeTab, tabLoadedFuture } from "./ChromeShortcuts"
 
 interface BettingInfo {
   outcome: string
@@ -106,8 +106,13 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
   }
 }
 
-const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
-  let handler = function(
+const execOlimpScript = (tabid: number) => 
+    chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
+
+const betOlimp = async (tabid: number, betinfo: BettingInfo): Promise<boolean> => {
+  execOlimpScript(tabid);
+
+  let handler = async function(
     msg: any,
     _: chrome.runtime.MessageSender,
     ret?: (...args: any) => void
@@ -121,7 +126,7 @@ const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
     switch (msg) {
       case "success":
         this.r(true)
-        console.info("%cStonks📈", "background:#00ab66; color:#fff; font-size: 14px; font-weight: bold;" 
+        console.info("%cStonks📈", "background:#00ab66; color:#fff; font-size: 14px; font-weight: bold;")
         break
       case "fail":
         console.warn(comment)
@@ -134,7 +139,8 @@ const betOlimp = async (betinfo: BettingInfo): Promise<boolean> => {
       case "getAuth":
         console.info("returning auth")
         ret({ login: storage.get('login'), pwd: storage.get('pwd') })
-
+        await tabLoadedFuture(tabid)
+        execOlimpScript(tabid)
         break
     }
   }
@@ -186,8 +192,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
       rawoutcome: OlimpBet.outcome
     }
     let tabid = (await createTab(booker_url)).id
-    chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
-    let result = await betOlimp(betInfo)
+    let result = await betOlimp(tabid, betInfo)
 
     closeTab(tabid)
     return result

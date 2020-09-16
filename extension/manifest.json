@@ -1,6 +1,6 @@
 {
   "name": "bot2",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "",
   "manifest_version": 2,
 
@@ -12,6 +12,16 @@
     "http://*/*",
     "https://*/*"
   ],
+
+  "icons": {
+    "16": "icon128.png",
+    "48": "icon128.png",
+    "128": "icon128.png"
+  },
+
+  "browser_action": {
+    "default_popup": "/popup/popup.html"
+  },
   
   "background": {
     "scripts": ["/back.js"],

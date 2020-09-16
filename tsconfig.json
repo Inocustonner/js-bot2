@@ -10,10 +10,11 @@
     "lib": ["es7", "dom", "es2020"],
     "moduleResolution": "node",
     "types": [
-      "chrome"
-    ]
+      "chrome",
+      // "node"
+    ],
   },
   "include": [
     "src/**/*",
-  ]
+  ],
 }

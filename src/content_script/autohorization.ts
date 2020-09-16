@@ -6,16 +6,18 @@ const sendRequest = (msg: any): Promise<any> => {
   })
 }
 
-export const ensure_autorization = async (): new Promise<void> => {
-  let authorized: bool = document.querySelector('.exitBtn') != null
+export const ensure_authorization = async (): Promise<void> => {
+  let authorized: boolean = document.querySelector('.exitBtn') != null
   if (!authorized) {
     const { login, pwd } = await sendRequest("getAuth")
     const inputFormParent = document.querySelector(".enter-block.clearfix") as HTMLElement
-    const inputs = inputFormParent.children[0].querySelectorAll('input') as HTMLInputElement
-    inputs[0].value = login
-    inputs[1].value = pwd;
+    let inputs = inputFormParent.children[0].querySelectorAll('input')
+    let loginInp = inputs[0] as HTMLInputElement
+    let pwdInp = inputs[1] as HTMLInputElement
+    loginInp.value = login
+    pwdInp.value = pwd;
     (inputFormParent.querySelector('form') as HTMLFormElement).submit()
-  } ppp
+  }
   return new Promise(
     r => authorized ? r() : false)
 }

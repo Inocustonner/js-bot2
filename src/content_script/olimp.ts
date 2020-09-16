@@ -1,6 +1,7 @@
 import * as $ from "jquery"
 import { logTableAndParamsOnServer } from "./ServerLog"
 import { findBetElem } from "./findBet"
+import { ensure_authorization } from "./autohorization"
 
 const urlParams = new URLSearchParams(location.search)
 const mid: string = urlParams.get("mid")
