@@ -1,6 +1,7 @@
 // common configuration
 const path = require("path")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
+const { nodeName } = require("jquery")
 
 const out_dir = "extension"
 
@@ -70,6 +71,17 @@ var backConfig = Object.assign({}, config, {
   output: {
     path: __dirname + `/${out_dir}`,
     filename: "[name].js",
+  },
+})
+
+var TimedMapTestConfig = Object.assign({}, config, {
+  name: "test-timed-map",
+  entry: {
+    back: path.resolve("./test/timed-map-test/test.ts"),
+  },
+  output: {
+    path: path.resolve(__dirname, "test/timed-map-test/"),
+    filename: "test.js",
   },
 })
 

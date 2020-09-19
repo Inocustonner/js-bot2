@@ -22,7 +22,7 @@ export const tabLoadedFuture = async (tabid: number) => {
   let lh: any
   return new Promise(r => {
     lh = listener.bind({ r: r })
-    chrome.tabs.onUpdated.addListener(listener)
+    chrome.tabs.onUpdated.addListener(lh)
   }).finally(
     () => chrome.tabs.onUpdated.removeListener(lh))
 }

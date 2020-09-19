@@ -50,7 +50,7 @@ const on_loaded = async () => {
   )
 
   console.info("BettingInfo", outcome, section, koef, stake)
-  await sleep(5)
+  // await sleep(2)
 
   let clear_b: HTMLElement
 

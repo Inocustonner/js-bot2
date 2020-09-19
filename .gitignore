@@ -3,6 +3,7 @@
 /extension/*
 !/extension/manifest.json
 copy.bat
+/test/timed-map-test/*.js
 **/.*
 .vscode
 !.gitignore

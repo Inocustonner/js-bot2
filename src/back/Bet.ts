@@ -7,7 +7,7 @@ interface BettingInfo {
   outcome: string
   section: string
   koef: number
-  stake: number,
+  stake: number
   rawoutcome: string
 }
 
@@ -37,25 +37,45 @@ export type BetData = EventRaw[]
 /* TimedMap is the map where elements have live time */
 // WARNING Errors may occure due-to this structure is not syncronized in data editing and etc.
 // SYNCRONISE It With mutex!!!
-class TimedMap<K, V> extends Map<K, V> {
+export class TimedMap<K, V> extends Map<K, V> {
+  #timeout_map: Map<K, number>
   #liveTime: number
   rw_mut: Mutex
+
   constructor(secToLive: number, ...args: any) {
     super(...args)
     this.set = this.set.bind(this)
+    this.refresh_timeout = this.refresh_timeout.bind(this)
+    this.setLiveTime = this.setLiveTime.bind(this)
+
+    this.#timeout_map = new Map()
     this.#liveTime = secToLive * 1000
+
     this.rw_mut = new Mutex()
   }
 
-  set(key: K, value: V): this {
-    super.set(key, value)
-    // delete element on timeout
-    setTimeout(
-      (key: K) =>
-        this.rw_mut.acquire().then(release => (super.delete(key), release())),
-      this.#liveTime,
-      key
+  setLiveTime(key: K) {
+    this.#timeout_map.set(
+      key,
+      setTimeout(
+        (key: K) =>
+          this.rw_mut.acquire().then(release => (super.delete(key), release())),
+        this.#liveTime,
+        key
+      )
     )
+  }
+
+  refresh_timeout(key: K) {
+    clearTimeout(0 || this.#timeout_map.get(key))
+    this.setLiveTime(key)
+  }
+
+  set(key: K, value: V): this {
+    let had_key: boolean = super.has(key)
+    super.set(key, value)
+    if (!had_key) this.setLiveTime(key)
+    else this.refresh_timeout(key)
     return this
   }
 
@@ -78,8 +98,10 @@ export const applyEvents = (events: BetEvent[]): void => {
   console.debug("before applyEvents", tmap, events)
   events.forEach(e => {
     let e$ = tmap.get(e.id)
-    if (e$) tmap.update(e.id, { arbs: e$.arbs.concat(e.arbs) } as BetEvent)
-    else tmap.set(e.id, e)
+    if (e$) {
+      tmap.refresh_timeout(e.id)
+      tmap.update(e.id, { arbs: e$.arbs.concat(e.arbs) } as BetEvent)
+    } else tmap.set(e.id, e)
   })
   console.debug("after applyEvents", tmap)
 }
@@ -106,13 +128,16 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
   }
 }
 
-const execOlimpScript = (tabid: number) => 
-    chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
+const execOlimpScript = (tabid: number) =>
+  chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
 
-const betOlimp = async (tabid: number, betinfo: BettingInfo): Promise<boolean> => {
-  execOlimpScript(tabid);
+const betOlimp = async (
+  tabid: number,
+  betinfo: BettingInfo
+): Promise<boolean> => {
+  execOlimpScript(tabid)
 
-  let handler = async function(
+  let handler = async function (
     msg: any,
     _: chrome.runtime.MessageSender,
     ret?: (...args: any) => void
@@ -126,7 +151,10 @@ const betOlimp = async (tabid: number, betinfo: BettingInfo): Promise<boolean> =
     switch (msg) {
       case "success":
         this.r(true)
-        console.info("%cStonks📈", "background:#00ab66; color:#fff; font-size: 14px; font-weight: bold;")
+        console.info(
+          "%cStonks📈",
+          "background:#00ab66; color:#fff; font-size: 14px; font-weight: bold;"
+        )
         break
       case "fail":
         console.warn(comment)
@@ -137,30 +165,35 @@ const betOlimp = async (tabid: number, betinfo: BettingInfo): Promise<boolean> =
         ret(betinfo)
         break
       case "getAuth":
+        if (this.auth_cnt > 0) {
+          console.error("Invalid Credentials. Unnable to auth")
+          this.r(false)
+        }
         console.info("returning auth")
-        ret({ login: storage.get('login'), pwd: storage.get('pwd') })
+        ret({ login: storage.get("login"), pwd: storage.get("pwd") })
         await tabLoadedFuture(tabid)
         execOlimpScript(tabid)
+        this.auth_cnt += 1
         break
     }
   }
   /* DONT EVEN LOOK BELOW, JUST LEAVE IT AS IT IS */
   let nh: any
   return new Promise<boolean>(r => {
-    nh = handler.bind({ betinfo: betinfo, r: r })
+    nh = handler.bind({ betinfo: betinfo, auth_cnt: 0, r: r })
     chrome.runtime.onMessage.addListener(nh)
   }).finally(() => chrome.runtime.onMessage.removeListener(nh))
 }
 
-
 /* Returns success of betting */
 export const betArb = async ({ bets }: Arb): Promise<boolean> => {
   let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
+  console.debug(`%cBets: ${bets}`, "background: #588BAE")
   try {
     let response = await axios.get(OlimpBet.url)
     let determinator_future = axios.get(
       storage.get("server_host") +
-      `api/determinators/determine?outcome=${OlimpBet.outcome}`
+        `api/determinators/determine?outcome=${OlimpBet.outcome}`
     )
 
     if (response.status != 200)
@@ -182,14 +215,16 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
       determinator = { section: "`.`", outcome: "`.`" }
 
     if (determinator.error) {
-      throw Error(`Error in determing outcome for ${OlimpBet.outcome}: ${determinator.error.reason}`)
+      throw Error(
+        `Error in determing outcome for ${OlimpBet.outcome}: ${determinator.error.reason}`
+      )
     }
 
     let betInfo: BettingInfo = {
       ...determinator,
       koef: OlimpBet.koef,
       stake: storage.get("stake"),
-      rawoutcome: OlimpBet.outcome
+      rawoutcome: OlimpBet.outcome,
     }
     let tabid = (await createTab(booker_url)).id
     let result = await betOlimp(tabid, betInfo)
