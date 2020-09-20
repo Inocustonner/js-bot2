@@ -87,7 +87,7 @@ export class TimedMap<K, V> extends Map<K, V> {
     return this
   }
 }
-let TTL = 20 * 60 // 20 mins
+let TTL = 30 * 60 // 30 min
 
 let tmap = new TimedMap<string, BetEvent>(TTL)
 
@@ -95,7 +95,7 @@ let tmap = new TimedMap<string, BetEvent>(TTL)
 export const applyEvents = (events: BetEvent[]): void => {
   // NOTE: i concat because in filterBetData function i leave only arbs that are not presented in tmap
   // IMPORTANT: e$ maybe deleted after assignment and i don't know, if this happens will this code throw
-  console.debug("before applyEvents", tmap, events)
+  console.debug("before applyEvents", tmap.entries(), events)
   events.forEach(e => {
     let e$ = tmap.get(e.id)
     if (e$) {
@@ -103,11 +103,11 @@ export const applyEvents = (events: BetEvent[]): void => {
       tmap.update(e.id, { arbs: e$.arbs.concat(e.arbs) } as BetEvent)
     } else tmap.set(e.id, e)
   })
-  console.debug("after applyEvents", tmap)
+  console.debug("after applyEvents", tmap.entries())
 }
 
 export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
-  console.debug(data, "\nfiltered with\n", tmap)
+  console.debug(data, "\nfiltered with\n", tmap.entries())
   const release = await tmap.rw_mut.acquire()
   try {
     let events = data.map(
@@ -188,7 +188,7 @@ const betOlimp = async (
 /* Returns success of betting */
 export const betArb = async ({ bets }: Arb): Promise<boolean> => {
   let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
-  console.debug(`%cBets: ${bets}`, "background: #588BAE")
+  console.debug(`%cBets:`, "background: #588BAE", bets)
   try {
     let response = await axios.get(OlimpBet.url)
     let determinator_future = axios.get(
