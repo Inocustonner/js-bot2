@@ -201,7 +201,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     if (response.status != 200)
       throw Error(`Return status !=200: ${response.status}`)
     // save for investigation
-    // axios.post(`http://192.168.6.3/api/store_data?dir=olimpUrlPages&key=${Date.now()}.html`, response.data)
+    // axios.post(`http://192.168.6.3/dev/api/store_data?dir=olimpUrlPages&key=${Date.now()}.html`, response.data)
     let $t = response.data.match(/(?<=direct_link = ').+(?=')/g)
     if (!$t) {
       console.info("No event url")
