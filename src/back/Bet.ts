@@ -195,7 +195,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     let response = await axios.get(OlimpBet.url)
     let so_pairs_future = axios.get(
       storage.get("server_host") +
-      `api/determinators/determine?outcome=${OlimpBet.outcome}`
+      `dev/api/determinators/determine?outcome=${OlimpBet.outcome}`
     )
 
     if (response.status != 200)
