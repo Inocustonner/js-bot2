@@ -119,9 +119,10 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
             tmap.has(event.id)
               ? tmap.get(event.id).arbs.every(earb => earb.id != arb.id)
               : true
-          ),
+          )
         } as BetEvent)
-    )
+    ).filter(e => e.completed != true) // filter out completed events
+
     return new Promise(r => r(events))
   } finally {
     release()
@@ -137,7 +138,7 @@ const betOlimp = async (
 ): Promise<boolean> => {
   execOlimpScript(tabid)
 
-  let handler = async function (
+  let handler = async function(
     msg: any,
     _: chrome.runtime.MessageSender,
     ret?: (...args: any) => void
@@ -193,7 +194,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     let response = await axios.get(OlimpBet.url)
     let determinator_future = axios.get(
       storage.get("server_host") +
-        `api/determinators/determine?outcome=${OlimpBet.outcome}`
+      `api/determinators/determine?outcome=${OlimpBet.outcome}`
     )
 
     if (response.status != 200)
@@ -230,7 +231,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     let result = await betOlimp(tabid, betInfo)
 
     closeTab(tabid)
-    return result
+    return new Promise(r => r(result))
   } catch (e) {
     console.error(e)
     return new Promise(r => r(false))

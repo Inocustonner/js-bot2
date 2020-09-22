@@ -2,6 +2,7 @@
 /node_modules/
 /extension/*
 !/extension/manifest.json
+!/extension/icon*
 copy.bat
 /test/timed-map-test/*.js
 **/.*
