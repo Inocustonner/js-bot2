@@ -3,9 +3,10 @@ import { local as storage } from "store2"
 import { default as axios } from "axios"
 import { createTab, closeTab, tabLoadedFuture } from "./ChromeShortcuts"
 
+type SOPair = [string, string]
+
 interface BettingInfo {
-  outcome: string
-  section: string
+  SOPairs: SOPair[]
   koef: number
   stake: number
   rawoutcome: string
@@ -192,7 +193,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
   console.debug(`%cBets:`, "background: #588BAE", bets)
   try {
     let response = await axios.get(OlimpBet.url)
-    let determinator_future = axios.get(
+    let so_pairs_future = axios.get(
       storage.get("server_host") +
       `api/determinators/determine?outcome=${OlimpBet.outcome}`
     )
@@ -210,19 +211,19 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     let booker_url = $t[0]
     console.info("Bookmaker url: ", booker_url)
 
-    let determinator = (await determinator_future).data
+    let so_pairs = (await so_pairs_future).data
 
-    if (storage.get("debug_olimp") && determinator.error)
-      determinator = { section: "`.`", outcome: "`.`" }
+    // if (storage.get("debug_olimp") && so_pairs.error)
+    //   so_pairs = [["`.`", "`.`"]]
 
-    if (determinator.error) {
+    if (so_pairs.error) {
       throw Error(
-        `Error in determing outcome for ${OlimpBet.outcome}: ${determinator.error.reason}`
+        `Error in determing outcome for ${OlimpBet.outcome}: ${so_pairs.error.reason}`
       )
     }
 
     let betInfo: BettingInfo = {
-      ...determinator,
+      SOPairs: so_pairs,
       koef: OlimpBet.koef,
       stake: storage.get("stake"),
       rawoutcome: OlimpBet.outcome,

@@ -45,18 +45,18 @@ const on_loaded = async () => {
 
   await ensure_authorization();
 
-  const { outcome, section, koef, stake, rawoutcome } = await sendRequest(
+  const { SOPairs, koef, stake, rawoutcome } = await sendRequest(
     "getInfo"
   )
 
-  console.info("BettingInfo", outcome, section, koef, stake)
+  console.info("BettingInfo", SOPairs, koef, stake)
   // await sleep(2)
 
   let clear_b: HTMLElement
 
   try {
     // Get koef element and mark it in red for logging
-    let koefEl: HTMLElement = findBetElem(section, outcome, mid)
+    let koefEl: HTMLElement = findBetElem(SOPairs, mid)
     koefEl.style.backgroundColor = "#FF1111" // red
 
     // check if koef has changed

@@ -1,13 +1,16 @@
 import * as $ from "jquery"
 
 const koef_class_name = "bet_sel koefs"
+let mid = ""
 
 interface OutcomePair {
   outcome: string
   koefEl: HTMLElement
 }
 
-const getSections = (mid: string): HTMLElement[] => {
+type SOPair = [string, string]
+
+const getSections = (): HTMLElement[] => {
   return $(`#odd${mid}>div`).children("b").toArray()
 }
 
@@ -70,17 +73,16 @@ const ThrowDeterminatorError = (
     throw `'${determinator_for}' determinator '${regex_str}' matched nothing`
 }
 
-const get_teams = (mid: string): string[] => {
+const get_teams = (): string[] => {
   return $(`#match_live_name_${mid}`).text().trim().split(" - ")
 }
 
 const get_section = (
   section: string,
-  section_regex: RegExp,
-  mid: string
+  section_regex: RegExp
 ): JQuery => {
   const sections: HTMLElement[] = filterMatch(
-    getSections(mid),
+    getSections(),
     section_regex,
     (e: HTMLElement) => e.innerText.slice(null, -1) // -1 to remove ':' at the end
   )
@@ -89,21 +91,20 @@ const get_section = (
   } else ThrowDeterminatorError(section, sections.map(e => e.innerText.trim().slice(null, -1)), "Section")
 }
 
-export const findBetElem = (
+const findBetElemSingle = (
   section: string,
-  outcome: string,
-  mid: string
+  outcome: string
 ): HTMLElement => {
   /* Runtime vars */
   // IMPORTANT: all regexes should eval it this context, because some of them contain reference variables
-  const [team1, team2] = get_teams(mid)
+  const [team1, team2] = get_teams()
   let section_el: JQuery
 
   const section_regex = new RegExp(eval(section), 'i') // case-insencetive
   // add if section == '' then pick header section bets
   // otherwise we know that this is the header section(section with no name)
   if (section != "``") {
-    section_el = get_section(section, section_regex, mid)
+    section_el = get_section(section, section_regex)
   } else {
     section_el = $(`#odd${mid}`)
   }
@@ -121,4 +122,23 @@ export const findBetElem = (
   // if found outcome
   if (outcomes.length != 1) ThrowDeterminatorError(outcome, outcomes.map(e => e.outcome), "Outcome")
   return outcomes[0].koefEl
+}
+
+export const findBetElem = (
+  SOPairs: SOPair[],
+  mid_arg: string
+) => {
+  let errors = ""
+  mid = mid_arg
+  for (let [section, outcome] of SOPairs) {
+    try {
+
+      let koefEl = findBetElemSingle(section, outcome)
+      return koefEl
+
+    } catch (error) {
+      errors.concat(error.stack + '\n\n')
+    }
+  }
+  throw errors;
 }
