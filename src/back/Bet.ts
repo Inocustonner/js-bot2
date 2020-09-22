@@ -119,11 +119,11 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
             tmap.has(event.id)
               ? tmap.get(event.id).arbs.every(earb => earb.id != arb.id)
               : true
-          ),
+          )
         } as BetEvent)
-    ).filter(e => e.completed != true); // filter out completed events
+    ).filter(e => e.completed != true) // filter out completed events
 
-    return new Promise(r => r(events)
+    return new Promise(r => r(events))
   } finally {
     release()
   }
