@@ -68,9 +68,9 @@ const ThrowDeterminatorError = (
 ) => {
   if (elements.length > 1) {
     let matched_sections: string = elements.join(", ")
-    throw `Ambiguous returns. '${determinator_for}' determinator '${regex_str}' matched: ${matched_sections}`
+    throw Error(`Ambiguous returns. '${determinator_for}' determinator '${regex_str}' matched: ${matched_sections}`)
   } else
-    throw `'${determinator_for}' determinator '${regex_str}' matched nothing`
+    throw Error(`'${determinator_for}' determinator '${regex_str}' matched nothing`)
 }
 
 const get_teams = (): string[] => {
@@ -137,7 +137,7 @@ export const findBetElem = (
       return koefEl
 
     } catch (error) {
-      errors.concat(error.stack + '\n\n')
+      errors = errors.concat(error.stack + '\n\n')
     }
   }
   throw errors;
