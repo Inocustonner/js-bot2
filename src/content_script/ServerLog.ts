@@ -22,7 +22,7 @@ export const logTableAndParamsOnServer = (
   stake: number,
   rawoutcome: string
 ) => {
-  let postUrl = `http://192.168.6.3/api/store_data?dir=betpages&key=${$(
+  let postUrl = `http://192.168.6.3/dev/api/store_data?dir=betpages&key=${$(
     `#match_live_name_${mid}`
   ).text()}.html`
   let data = createTableHtml(SOPairs, koef, stake, rawoutcome)
