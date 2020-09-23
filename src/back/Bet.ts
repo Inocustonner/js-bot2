@@ -195,13 +195,12 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     let response = await axios.get(OlimpBet.url)
     let so_pairs_future = axios.get(
       storage.get("server_host") +
-      `dev/api/determinators/determine?outcome=${OlimpBet.outcome}`
+      `api/determinators/determine?outcome=${OlimpBet.outcome}`
     )
 
     if (response.status != 200)
       throw Error(`Return status !=200: ${response.status}`)
-    // save for investigation
-    // axios.post(`http://192.168.6.3/dev/api/store_data?dir=olimpUrlPages&key=${Date.now()}.html`, response.data)
+
     let $t = response.data.match(/(?<=direct_link = ').+(?=')/g)
     if (!$t) {
       console.info("No event url")
@@ -212,9 +211,6 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     console.info("Bookmaker url: ", booker_url)
 
     let so_pairs = (await so_pairs_future).data
-
-    // if (storage.get("debug_olimp") && so_pairs.error)
-    //   so_pairs = [["`.`", "`.`"]]
 
     if (so_pairs.error) {
       throw Error(

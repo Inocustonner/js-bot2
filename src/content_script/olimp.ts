@@ -93,13 +93,13 @@ const on_loaded = async () => {
 
   } catch (error) {
     clear_b?.click()
-    // logTableAndParamsOnServer(mid, outcome, section, koef, stake, rawoutcome)
+    logTableAndParamsOnServer(mid, SOPairs.toString(), koef, stake, rawoutcome)
     console.debug(error)
     if (typeof error == "object") error = error.stack
     finish({ status: "fail", comment: error })
     return
   }
-  // logTableAndParamsOnServer(mid, outcome, section, koef, stake, rawoutcome) // maybe make it a promise?
+  logTableAndParamsOnServer(mid, SOPairs.toString(), koef, stake, rawoutcome) // maybe make it a promise?
   finish()
 }
 
