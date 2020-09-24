@@ -101,7 +101,7 @@ export const applyEvents = (events: BetEvent[]): void => {
     let e$ = tmap.get(e.id)
     if (e$) {
       tmap.refresh_timeout(e.id)
-      tmap.update(e.id, { arbs: e$.arbs.concat(e.arbs) } as BetEvent)
+      tmap.update(e.id, { completed: e$.completed || e.completed, arbs: e$.arbs.concat(e.arbs) } as BetEvent)
     } else tmap.set(e.id, e)
   })
   console.debug("after applyEvents", tmap.entries())
