@@ -11,7 +11,7 @@ const submit_button_selector = '.busket-pay>[name=formsubmit]'
 const stake_input_selector = '[name=singlebet_sum0]'
 const clear_button_selector = '.clearAllbasket'
 
-const checkKoef = true
+const checkKoefEnabled = true
 
 const sendRequest = (msg: any): Promise<any> => {
   return new Promise(r => {
@@ -43,6 +43,22 @@ const submit = async (submit_butt: HTMLElement, clear_butt: HTMLElement) => {
 
 const on_loaded = async () => {
 
+  const assertKoefIsValid = (bkKoef: number, koef_expected: number) => {
+    const max_koef = 4;
+    const min_koef = 1.35
+    if (bkKoef - koef_expected < 0) {
+      throw `Koef has changed from ${koef_expected} to ${bkKoef}`
+    }
+
+    if (bkKoef < min_koef) {
+      throw `Koef ${bkKoef} < 1.3`
+    }
+    
+    if (bkKoef > max_koef) {
+      throw `Koef ${bkKoef} > 4`
+    }
+  }
+
   await ensure_authorization();
 
   const { SOPairs, koef, stake, rawoutcome } = await sendRequest(
@@ -61,9 +77,8 @@ const on_loaded = async () => {
 
     // check if koef has changed
     let bkKoef = parseFloat(koefEl.innerText)
-    if (checkKoef && bkKoef - koef < 0) {
-      throw `Koef has changed from ${koef} to ${bkKoef}`
-    }
+    
+    if (checkKoefEnabled) assertKoefIsValid(bkKoef, koef);
 
     // click on koef and wait for basket to show up
     koefEl.click()
