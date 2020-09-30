@@ -10,20 +10,13 @@ const messageManager = async () => {
     let betdata = await control_queue.get()
     let events = await filterBetData(betdata)
     console.debug("Clear events", events)
-    let events_cnt = events.length
-    let i = 0
-    let skipped = 0
     for (let event of events) {
       // if event has been complited stop iteration
       for (let arb of event.arbs) {
         event.completed = await betArb(arb)
         if (event.completed) break
       }
-      if (event.arbs.length == 0)
-        skipped += 1
-      console.info(`${i += 1}/${events_cnt} events processed`)
     }
-    console.info(`skipped ${skipped}`)
     applyEvents(events);
   }
 }

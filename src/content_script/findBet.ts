@@ -137,7 +137,7 @@ export const findBetElem = (
       return koefEl
 
     } catch (error) {
-      errors = errors.concat(error.stack + '\n\n')
+      errors = errors.concat(error.toString() + '\n\n')
     }
   }
   throw errors;
