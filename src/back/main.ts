@@ -1,6 +1,8 @@
 import { PipeQueue } from "./Sync"
 import { filterBetData, BetData, BetEvent, betArb, applyEvents } from "./Bet"
 import { initializeSettings } from './Settings'
+import { startClock, timerRunAt } from './Clock'
+import { local as storage } from 'store2'
 import './Actions'
 
 var control_queue = new PipeQueue<BetData>()
@@ -22,9 +24,18 @@ const messageManager = async () => {
 }
 
 const on_message = (msg: any) => {
+  const COMMAND_RELOAD = 1;
+  // const COMMAND_CLEAR_COOKIE = 2;
   try {
     // json may fail
-    control_queue.push(JSON.parse(msg.data).events as BetData)
+    let packet = JSON.parse(msg.data)
+    switch (packet.command) {
+      case COMMAND_RELOAD:
+        chrome.runtime.reload();
+        break;
+      default:
+        control_queue.push(packet.events as BetData)
+    }
   } catch (e) {
     console.error(e)
   }
@@ -50,6 +61,10 @@ const async_sleep = (sec: number): Promise<void> => {
   })
 }
 
+const freeResources = () => {
+  console.clear()
+}
+
 // window.onload = main
 const main = async () => {
   // eventify(control_queue, 'push', onpushed)
@@ -57,6 +72,10 @@ const main = async () => {
   const server_address = "ws://192.168.6.3/wsapi/"
 
   initializeSettings()
+
+  // MUST be run after initializeSettings
+  timerRunAt(freeResources, { hour: storage.get("settings.hour_freeResources"), min: storage.get("settings.min_freeResources") })
+  startClock()
   // create a messager "thread"
   new Promise(messageManager)
 

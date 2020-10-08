@@ -53,7 +53,7 @@ const on_loaded = async () => {
     if (bkKoef < min_koef) {
       throw `Koef ${bkKoef} < 1.3`
     }
-    
+
     if (bkKoef > max_koef) {
       throw `Koef ${bkKoef} > 4`
     }
@@ -77,7 +77,7 @@ const on_loaded = async () => {
 
     // check if koef has changed
     let bkKoef = parseFloat(koefEl.innerText)
-    
+
     if (checkKoefEnabled) assertKoefIsValid(bkKoef, koef);
 
     // click on koef and wait for basket to show up
@@ -108,13 +108,13 @@ const on_loaded = async () => {
 
   } catch (error) {
     clear_b?.click()
-    logTableAndParamsOnServer(mid, SOPairs.toString(), koef, stake, rawoutcome)
+    // logTableAndParamsOnServer(mid, SOPairs.toString(), koef, stake, rawoutcome)
     console.debug(error)
     if (typeof error == "object") error = error.stack
     finish({ status: "fail", comment: error })
     return
   }
-  logTableAndParamsOnServer(mid, SOPairs.toString(), koef, stake, rawoutcome) // maybe make it a promise?
+  // logTableAndParamsOnServer(mid, SOPairs.toString(), koef, stake, rawoutcome) // maybe make it a promise?
   finish()
 }
 

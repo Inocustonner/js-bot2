@@ -29,7 +29,7 @@ var config = {
     ],
   },
   resolve: {
-    extensions: [".ts", ".js"],
+		extensions: [".ts", ".js"],
   },
   devtool: "inline-source-map",
   plugins: [],
@@ -81,6 +81,17 @@ var TimedMapTestConfig = Object.assign({}, config, {
   },
   output: {
     path: path.resolve(__dirname, "test/timed-map-test/"),
+    filename: "test.js",
+  },
+})
+
+var timerClockTest = Object.assign({}, config, {
+  name: "timer-clock-test",
+  entry: {
+    back: path.resolve("./test/timer-clock-test/test.ts"),
+  },
+  output: {
+    path: path.resolve(__dirname, "test/timer-clock-test/"),
     filename: "test.js",
   },
 })

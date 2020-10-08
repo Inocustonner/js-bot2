@@ -1,7 +1,9 @@
 import { Mutex } from "async-mutex"
-import { local as storage } from "store2"
+import { local as storage2 } from "store2"
 import { default as axios } from "axios"
 import { createTab, closeTab, tabLoadedFuture } from "./ChromeShortcuts"
+
+let storage = storage2.namespace('settings')
 
 type SOPair = [string, string]
 
@@ -145,7 +147,9 @@ const betOlimp = async (
     ret?: (...args: any) => void
   ) {
     let comment
+    let error_code
     if (typeof msg == "object") {
+      error_code = msg.error_code
       comment = msg.comment
       msg = msg.status
     }
@@ -194,7 +198,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
   try {
     let response = await axios.get(OlimpBet.url)
     let so_pairs_future = axios.get(
-      storage.get("server_host") +
+      storage2.get("server_host") +
       `api/determinators/determine?outcome=${OlimpBet.outcome}`
     )
 
