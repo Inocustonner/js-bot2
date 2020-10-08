@@ -10,16 +10,16 @@ export interface HMTime {
 
 // every time given hour:min(HMTime) is passed, f is invoked.
 // return: id of added handler
-export const timerRunAt = (f: () => void, hm: HMTime): number => {
-  function timerBase(f: () => void, hm: HMTime): void {
+export const timerRunAt = (f: () => boolean, hm: HMTime): number => {
+  function timerBase(f: () => boolean, hm: HMTime): void {
     const SEC = 1000
     const MIN = 60 * SEC
     const HOUR = 60 * MIN
     const DAY = 24 * HOUR
     let now = new Date()
     if (this.date <= now) {
-      f()
-      this.date = new Date(this.date.getTime() + DAY)
+			if (f() != false)
+				this.date = new Date(this.date.getTime() + DAY)
     }
   }
   let now = new Date()

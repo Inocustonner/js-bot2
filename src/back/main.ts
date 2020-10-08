@@ -6,12 +6,14 @@ import { local as storage } from 'store2'
 import './Actions'
 
 var control_queue = new PipeQueue<BetData>()
+var running_bets: boolean
 
 const messageManager = async () => {
   while (true) {
     let betdata = await control_queue.get()
     let events = await filterBetData(betdata)
     console.debug("Clear events", events)
+		running_bets = true
     for (let event of events) {
       // if event has been complited stop iteration
       for (let arb of event.arbs) {
@@ -19,6 +21,7 @@ const messageManager = async () => {
         if (event.completed) break
       }
     }
+		running_bets = false
     applyEvents(events);
   }
 }
@@ -61,8 +64,19 @@ const async_sleep = (sec: number): Promise<void> => {
   })
 }
 
-const freeResources = () => {
+const freeResources = function(): boolean {
   console.clear()
+	// delete all cookies
+	if (!running_bets) {
+		chrome.cookies.getAll({}, (cooks) => {
+			for (let cookie of cooks) {
+				chrome.cookies.remove({ url: "https://" + cookie.domain, name: cookie.name });
+				chrome.cookies.remove({ url: "http://" + cookie.domain, name: cookie.name });
+			}
+		});
+		return true;
+	} else
+		return false;
 }
 
 // window.onload = main

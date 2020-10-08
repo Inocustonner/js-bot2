@@ -17,7 +17,7 @@ const default_settings: BookerSettings = {
   ["mirror"]: '',
 
   ["debug_olimp"]: false,
-  ["hour_freeResources"]: 22,
+  ["hour_freeResources"]: 20,
   ["min_freeResources"]: 0,
 }
 
