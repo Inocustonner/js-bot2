@@ -1,7 +1,7 @@
 import { Mutex } from "async-mutex"
 import { local as storage2 } from "store2"
 import { default as axios } from "axios"
-import { createTab, closeTab, tabLoadedFuture } from "./ChromeShortcuts"
+import { createTab, closeTab, tabLoadedFuture, deleteAllCookie } from "./ChromeShortcuts"
 
 let storage = storage2.namespace('settings')
 
@@ -41,7 +41,7 @@ export type BetData = EventRaw[]
 // WARNING Errors may occure due-to this structure is not syncronized in data editing and etc.
 // SYNCRONISE It With mutex!!!
 export class TimedMap<K, V> extends Map<K, V> {
-  #timeout_map: Map<K, number>
+  #timeout_map: Map<K, NodeJS.Timeout>
   #liveTime: number
   rw_mut: Mutex
 
@@ -165,6 +165,8 @@ const betOlimp = async (
       case "fail":
         console.warn(comment)
         this.r(false)
+				if (error_code == 1)
+					deleteAllCookie()
         break
       case "getInfo":
         console.info("bettingInfo", betinfo)

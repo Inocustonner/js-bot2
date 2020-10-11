@@ -4,6 +4,7 @@ import { initializeSettings } from './Settings'
 import { startClock, timerRunAt } from './Clock'
 import { local as storage } from 'store2'
 import './Actions'
+import { deleteAllCookie } from "./ChromeShortcuts"
 
 var control_queue = new PipeQueue<BetData>()
 var running_bets: boolean
@@ -28,7 +29,6 @@ const messageManager = async () => {
 
 const on_message = (msg: any) => {
   const COMMAND_RELOAD = 1;
-  // const COMMAND_CLEAR_COOKIE = 2;
   try {
     // json may fail
     let packet = JSON.parse(msg.data)
@@ -66,17 +66,11 @@ const async_sleep = (sec: number): Promise<void> => {
 
 const freeResources = function(): boolean {
   console.clear()
-	// delete all cookies
 	if (!running_bets) {
-		chrome.cookies.getAll({}, (cooks) => {
-			for (let cookie of cooks) {
-				chrome.cookies.remove({ url: "https://" + cookie.domain, name: cookie.name });
-				chrome.cookies.remove({ url: "http://" + cookie.domain, name: cookie.name });
-			}
-		});
-		return true;
-	} else
-		return false;
+		deleteAllCookie()
+		return true
+	}
+	else return false
 }
 
 // window.onload = main
