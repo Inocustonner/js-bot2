@@ -96,4 +96,8 @@ var timerClockTest = Object.assign({}, config, {
   },
 })
 
-module.exports = [backConfig, olimpConfig, popupConfig]
+module.exports = [
+		backConfig,
+		olimpConfig,
+		popupConfig
+]

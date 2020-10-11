@@ -21,7 +21,8 @@ const sendRequest = (msg: any): Promise<any> => {
 
 interface ReturnStatus {
   status: string
-  comment?: string
+  comment?: string,
+	error_code?: number
 }
 
 const finish = (status: ReturnStatus = { status: "success" }) => {
@@ -129,7 +130,7 @@ const onExists = (
     // if already exists
     if (exists(selector)) r(parent.querySelector(selector) as HTMLElement)
 
-    let t: number
+    let t: NodeJS.Timeout
     if (timeout)
       t = setTimeout(
         () => e(`Element '${selector}' didn't appear. Timeout `),
@@ -155,5 +156,6 @@ onExists(`#odd${mid}`, $(".bing-table-width").get(0), 8)
     finish({
       status: "fail",
       comment: "waiting timedout",
+			error_code: 1
     })
   )

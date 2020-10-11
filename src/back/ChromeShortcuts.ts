@@ -11,7 +11,7 @@ export const closeTab = async (tabid: number): Promise<void> => {
 }
 
 export const tabLoadedFuture = async (tabid: number) => {
-  let listener = function (
+  let listener = function(
     tabid: number,
     changeInfo: chrome.tabs.TabChangeInfo,
     tab: chrome.tabs.Tab
@@ -25,4 +25,16 @@ export const tabLoadedFuture = async (tabid: number) => {
     chrome.tabs.onUpdated.addListener(lh)
   }).finally(
     () => chrome.tabs.onUpdated.removeListener(lh))
+}
+
+export const deleteAllCookie = async (): Promise<void> => {
+	return new Promise(r => {
+		// delete all cookies
+		chrome.cookies.getAll({}, (cooks) => {
+			for (let cookie of cooks) {
+				chrome.cookies.remove({ url: "https://" + cookie.domain, name: cookie.name });
+				chrome.cookies.remove({ url: "http://" + cookie.domain, name: cookie.name });
+			}
+		})
+	})
 }
