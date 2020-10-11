@@ -4,7 +4,7 @@
 !/extension/manifest.json
 !/extension/icon*
 copy.bat
-/test/timed-map-test/*.js
+/test/**.js
 **/.*
 .vscode
 !.gitignore
