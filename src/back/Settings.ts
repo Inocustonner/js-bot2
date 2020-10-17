@@ -56,10 +56,5 @@ export const initializeSettings = () => {
   }
   add_setting_if_not_exists('server_host', 'http://192.168.6.3/')
 
-  // backward capability
-  // TODO: remove on next update
-  if (storage.get('login') == "") storage.set('login', storage2.get('login'))
-  if (storage.get('pwd') == "") storage.set('pwd', storage2.get('pwd'))
-
   settings_receiver()
 }

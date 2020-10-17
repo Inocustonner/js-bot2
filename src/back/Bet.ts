@@ -2,7 +2,7 @@ import { Mutex } from "async-mutex"
 import { local as storage2 } from "store2"
 import { default as axios } from "axios"
 import { createTab, closeTab, tabLoadedFuture, deleteAllCookie } from "./ChromeShortcuts"
-
+import { promisePortConnection } from "./PortDriver"
 let storage = storage2.namespace('settings')
 
 type SOPair = [string, string]
@@ -136,15 +136,11 @@ const execOlimpScript = (tabid: number) =>
   chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
 
 const betOlimp = async (
-  tabid: number,
+  booker_url: string,
   betinfo: BettingInfo
 ): Promise<boolean> => {
-  execOlimpScript(tabid)
-
-  let handler = async function(
+  async function handler(
     msg: any,
-    _: chrome.runtime.MessageSender,
-    ret?: (...args: any) => void
   ) {
     let comment
     let error_code
@@ -165,32 +161,54 @@ const betOlimp = async (
       case "fail":
         console.warn(comment)
         this.r(false)
-				if (error_code == 1)
-					deleteAllCookie()
+        if (error_code == 1)
+          deleteAllCookie()
         break
       case "getInfo":
         console.info("bettingInfo", betinfo)
-        ret(betinfo)
+        this.port.postMessage(betinfo)
         break
       case "getAuth":
         if (this.auth_cnt > 0) {
           console.error("Invalid Credentials. Unnable to auth")
           this.r(false)
-        }
+        } else this.auth_cnt += 1
+				
         console.info("returning auth")
-        ret({ login: storage.get("login"), pwd: storage.get("pwd") })
-        await tabLoadedFuture(tabid)
-        execOlimpScript(tabid)
-        this.auth_cnt += 1
+        this.port.postMessage({ login: storage.get("login"), pwd: storage.get("pwd") })
+				
+        await tabLoadedFuture(this.tabid)
+
+				let port_promise = promisePortConnection('olimp_port')
+				
+        execOlimpScript(this.tabid)
+				
+				this.port = await port_promise
+				this.port.onMessage.addListener(handler.bind(this))
+
         break
     }
   }
-  /* DONT EVEN LOOK BELOW, JUST LEAVE IT AS IT IS */
-  let nh: any
+
+	// order is crucial
+  let port_promise = promisePortConnection('olimp_port')
+	
+	let tabid: number = (await createTab(booker_url)).id
+  execOlimpScript(tabid)
+	
+  let port: chrome.runtime.Port = await port_promise
+	
   return new Promise<boolean>(r => {
-    nh = handler.bind({ betinfo: betinfo, auth_cnt: 0, r: r })
-    chrome.runtime.onMessage.addListener(nh)
-  }).finally(() => chrome.runtime.onMessage.removeListener(nh))
+    port.onMessage.addListener(handler.bind({
+      betinfo: betinfo,
+			tabid: tabid,
+      auth_cnt: 0,
+      r: r,
+      port: port,
+    }))
+  }).finally(() => {
+		closeTab(tabid)
+	})
 }
 
 /* Returns success of betting */
@@ -200,8 +218,8 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
   try {
     let response = await axios.get(OlimpBet.url)
     let so_pairs_future = axios.get(
-		storage2.get("server_host") +
-		`api/determinators/determine?outcome=${OlimpBet.outcome}`
+      storage2.get("server_host") +
+      `api/determinators/determine?outcome=${OlimpBet.outcome}`
     )
 
     if (response.status != 200)
@@ -230,10 +248,8 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
       stake: storage.get("stake"),
       rawoutcome: OlimpBet.outcome,
     }
-    let tabid = (await createTab(booker_url)).id
-    let result = await betOlimp(tabid, betInfo)
-
-    closeTab(tabid)
+    // let tabid = (await createTab(booker_url)).id
+    let result = await betOlimp(booker_url, betInfo)
     return new Promise(r => r(result))
   } catch (e) {
     console.error(e)

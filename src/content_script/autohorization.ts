@@ -1,15 +1,11 @@
-// copy of sendRequest from olimp.ts
-// maybe i consider moving this function in new utils.ts file
-const sendRequest = (msg: any): Promise<any> => {
-  return new Promise(r => {
-    chrome.runtime.sendMessage(msg, r)
-  })
-}
+import { port } from "./olimp"
 
 export const ensure_authorization = async (): Promise<void> => {
   let authorized: boolean = document.querySelector('.exitBtn') != null
   if (!authorized) {
-    const { login, pwd } = await sendRequest("getAuth")
+		port.sendRequest("getAuth")
+    const { login, pwd } = await port.receiveRequest()
+		
     const inputFormParent = document.querySelector(".enter-block.clearfix") as HTMLElement
     let inputs = inputFormParent.children[0].querySelectorAll('input')
     let loginInp = inputs[0] as HTMLInputElement

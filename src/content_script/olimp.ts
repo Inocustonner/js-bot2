@@ -2,7 +2,7 @@ import * as $ from "jquery"
 import { logTableAndParamsOnServer } from "./ServerLog"
 import { findBetElem } from "./findBet"
 import { ensure_authorization } from "./autohorization"
-
+import { Port } from "./Port"
 const urlParams = new URLSearchParams(location.search)
 const mid: string = urlParams.get("mid")
 const sleep = async (sec: number) => new Promise(r => setTimeout(r, sec * 1000))
@@ -13,20 +13,16 @@ const clear_button_selector = '.clearAllbasket'
 
 const checkKoefEnabled = true
 
-const sendRequest = (msg: any): Promise<any> => {
-  return new Promise(r => {
-    chrome.runtime.sendMessage(msg, r)
-  })
-}
+export const port = new Port('olimp_port')
 
 interface ReturnStatus {
   status: string
   comment?: string,
-	error_code?: number
+  error_code?: number
 }
 
 const finish = (status: ReturnStatus = { status: "success" }) => {
-  sendRequest(status)
+  port.sendRequest(status)
 }
 
 const submit = async (submit_butt: HTMLElement, clear_butt: HTMLElement) => {
@@ -61,11 +57,12 @@ const on_loaded = async () => {
   }
 
   await ensure_authorization();
+	
+	console.log("Requesting info")
+  port.sendRequest("getInfo")
 
-  const { SOPairs, koef, stake, rawoutcome } = await sendRequest(
-    "getInfo"
-  )
-
+	const { SOPairs, koef, stake, rawoutcome } = await port.receiveRequest()
+	
   console.info("BettingInfo", SOPairs, koef, stake)
   // await sleep(2)
 
@@ -150,12 +147,12 @@ const onExists = (
   })
 }
 
-onExists(`#odd${mid}`, $(".bing-table-width").get(0), 8)
+onExists(`#odd${mid}`, document.body, 8)
   .then(on_loaded)
   .catch(() =>
     finish({
       status: "fail",
       comment: "waiting timedout",
-			error_code: 1
+      error_code: 1
     })
   )

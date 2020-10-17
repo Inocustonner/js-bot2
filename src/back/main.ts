@@ -5,6 +5,7 @@ import { startClock, timerRunAt } from './Clock'
 import { local as storage } from 'store2'
 import './Actions'
 import { deleteAllCookie } from "./ChromeShortcuts"
+import { portDriverInit } from "./PortDriver"
 
 var control_queue = new PipeQueue<BetData>()
 var running_bets: boolean
@@ -80,7 +81,7 @@ const main = async () => {
   const server_address = "ws://192.168.6.3/wsapi/"
 
   initializeSettings()
-
+  portDriverInit()
   // MUST be run after initializeSettings
   timerRunAt(freeResources, { hour: storage.get("settings.hour_freeResources"), min: storage.get("settings.min_freeResources") })
   startClock()
