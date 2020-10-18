@@ -3,9 +3,9 @@ import { port } from "./olimp"
 export const ensure_authorization = async (): Promise<void> => {
   let authorized: boolean = document.querySelector('.exitBtn') != null
   if (!authorized) {
-		port.sendRequest("getAuth")
+    port.sendRequest({ request: "getAuth" })
     const { login, pwd } = await port.receiveRequest()
-		
+
     const inputFormParent = document.querySelector(".enter-block.clearfix") as HTMLElement
     let inputs = inputFormParent.children[0].querySelectorAll('input')
     let loginInp = inputs[0] as HTMLInputElement

@@ -1,6 +1,6 @@
 export type ClockHandler = () => void
 
-let clock: NodeJS.Timeout
+let clock: NodeJS.Timeout | number
 let clockHandlers: ClockHandler[] = []
 
 export interface HMTime {

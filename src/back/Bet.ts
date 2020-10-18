@@ -1,18 +1,11 @@
 import { Mutex } from "async-mutex"
 import { local as storage2 } from "store2"
-import { default as axios } from "axios"
+import axios from "axios"
 import { createTab, closeTab, tabLoadedFuture, deleteAllCookie } from "./ChromeShortcuts"
 import { promisePortConnection } from "./PortDriver"
+import { OlimpDriver } from "./Drivers/OlimpDriver"
+
 let storage = storage2.namespace('settings')
-
-type SOPair = [string, string]
-
-interface BettingInfo {
-  SOPairs: SOPair[]
-  koef: number
-  stake: number
-  rawoutcome: string
-}
 
 interface Bet {
   bookmaker: string
@@ -40,8 +33,10 @@ export type BetData = EventRaw[]
 /* TimedMap is the map where elements have live time */
 // WARNING Errors may occure due-to this structure is not syncronized in data editing and etc.
 // SYNCRONISE It With mutex!!!
+type Timeout = any
+
 export class TimedMap<K, V> extends Map<K, V> {
-  #timeout_map: Map<K, NodeJS.Timeout>
+  #timeout_map: Map<K, Timeout>
   #liveTime: number
   rw_mut: Mutex
 
@@ -132,96 +127,14 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
   }
 }
 
-const execOlimpScript = (tabid: number) =>
-  chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
-
-const betOlimp = async (
-  booker_url: string,
-  betinfo: BettingInfo
-): Promise<boolean> => {
-  async function handler(
-    msg: any,
-  ) {
-    let comment
-    let error_code
-    if (typeof msg == "object") {
-      error_code = msg.error_code
-      comment = msg.comment
-      msg = msg.status
-    }
-
-    switch (msg) {
-      case "success":
-        this.r(true)
-        console.info(
-          "%cStonks📈",
-          "background:#00ab66; color:#fff; font-size: 14px; font-weight: bold;"
-        )
-        break
-      case "fail":
-        console.warn(comment)
-        this.r(false)
-        if (error_code == 1)
-          deleteAllCookie()
-        break
-      case "getInfo":
-        console.info("bettingInfo", betinfo)
-        this.port.postMessage(betinfo)
-        break
-      case "getAuth":
-        if (this.auth_cnt > 0) {
-          console.error("Invalid Credentials. Unnable to auth")
-          this.r(false)
-        } else this.auth_cnt += 1
-				
-        console.info("returning auth")
-        this.port.postMessage({ login: storage.get("login"), pwd: storage.get("pwd") })
-				
-        await tabLoadedFuture(this.tabid)
-
-				let port_promise = promisePortConnection('olimp_port')
-				
-        execOlimpScript(this.tabid)
-				
-				this.port = await port_promise
-				this.port.onMessage.addListener(handler.bind(this))
-
-        break
-    }
-  }
-
-	// order is crucial
-  let port_promise = promisePortConnection('olimp_port')
-	
-	let tabid: number = (await createTab(booker_url)).id
-  execOlimpScript(tabid)
-	
-  let port: chrome.runtime.Port = await port_promise
-	
-  return new Promise<boolean>(r => {
-    port.onMessage.addListener(handler.bind({
-      betinfo: betinfo,
-			tabid: tabid,
-      auth_cnt: 0,
-      r: r,
-      port: port,
-    }))
-  }).finally(() => {
-		closeTab(tabid)
-	})
-}
-
 /* Returns success of betting */
 export const betArb = async ({ bets }: Arb): Promise<boolean> => {
   let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
   console.debug(`%cBets:`, "background: #588BAE", bets)
+	
+	let booker_url: string
   try {
     let response = await axios.get(OlimpBet.url)
-    let so_pairs_future = axios.get(
-      storage2.get("server_host") +
-      `api/determinators/determine?outcome=${OlimpBet.outcome}`
-    )
-
     if (response.status != 200)
       throw Error(`Return status !=200: ${response.status}`)
 
@@ -231,28 +144,29 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
       return new Promise(r => r(false))
     }
 
-    let booker_url = $t[0]
-    console.info("Bookmaker url: ", booker_url)
+    booker_url = $t[0]
 
-    let so_pairs = (await so_pairs_future).data
-
-    if (so_pairs.error) {
-      throw Error(
-        `Error in determing outcome for ${OlimpBet.outcome}: ${so_pairs.error.reason}`
-      )
-    }
-
-    let betInfo: BettingInfo = {
-      SOPairs: so_pairs,
-      koef: OlimpBet.koef,
-      stake: storage.get("stake"),
-      rawoutcome: OlimpBet.outcome,
-    }
-    // let tabid = (await createTab(booker_url)).id
-    let result = await betOlimp(booker_url, betInfo)
-    return new Promise(r => r(result))
   } catch (e) {
     console.error(e)
     return new Promise(r => r(false))
   }
+	
+  let result = false
+  let olimp = new OlimpDriver(booker_url, OlimpBet.outcome)
+
+  TryBet: try {
+    let koef = await olimp.getReady()
+		
+    if (koef < OlimpBet.koef) {
+      console.warn(`Koef changed from ${OlimpBet.koef} to ${koef}`)
+      break TryBet
+    }
+    let result = await olimp.bet(storage.get('stake'))
+  } catch (e) {
+    console.error(e)
+  }
+  finally {
+    olimp.release()
+  }
+	return new Promise(r => r(result))
 }
