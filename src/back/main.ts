@@ -27,7 +27,7 @@ const messageManager = async () => {
     applyEvents(events)
     if (storage.get('settings.time_gap') > 0)
       await new Promise(r =>
-        setTimeout(r, storage.get('settings.time_gap')))
+        setTimeout(r, storage.get('settings.time_gap') * 1000))
   }
 }
 
