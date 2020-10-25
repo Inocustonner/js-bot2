@@ -1,4 +1,4 @@
-#grid-main {
+.grid-double {
   display: grid;
   grid-template-columns: repeat(2, minmax(200px, 1fr));
   column-gap: 15px;

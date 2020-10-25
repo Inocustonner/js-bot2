@@ -6,12 +6,14 @@
     "sourceMap": true,
     "target": "es6",
     "jsx": "react",
-    "allowJs": true,
+		"allowJs": true,
+		"resolveJsonModule": true,
+		"allowSyntheticDefaultImports": true,
     "lib": ["es7", "dom", "es2020"],
     "moduleResolution": "node",
     "types": [
       "chrome",
-      // "node"
+      "node"
     ],
   }
   // "include": [

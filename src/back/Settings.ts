@@ -3,18 +3,15 @@ interface StringMap {
   [name: string]: any
 }
 
-interface BookerSettings extends StringMap {
-  ["login"]: string,
-  ["pwd"]: string,
-  ["stake"]: number,
-  ["mirror"]: string,
-}
+const default_settings: StringMap = {
+  ["loginOlimp"]: '',
+  ["pwdOlimp"]: '',
 
-const default_settings: BookerSettings = {
-  ["login"]: '',
-  ["pwd"]: '',
+	["loginPinnacle"]: '',
+	["pwdPinnacle"]: '',
+
+	["time_gap"]: 0,
   ["stake"]: 10,
-  ["mirror"]: '',
 
   ["debug_olimp"]: false,
   ["hour_freeResources"]: 20,

@@ -3,7 +3,9 @@ import { local as storage2 } from "store2"
 import axios from "axios"
 import { createTab, closeTab, tabLoadedFuture, deleteAllCookie } from "./ChromeShortcuts"
 import { promisePortConnection } from "./PortDriver"
-import { OlimpDriver } from "./Drivers/OlimpDriver"
+import { OlimpDriver } from "./drivers/OlimpDriver"
+import { PinnacleDriver } from "./drivers/PinnacleDriver"
+import { DriverInterface } from "./drivers/DriverInterface"
 
 let storage = storage2.namespace('settings')
 
@@ -127,46 +129,86 @@ export const filterBetData = async (data: BetData): Promise<BetEvent[]> => {
   }
 }
 
-/* Returns success of betting */
-export const betArb = async ({ bets }: Arb): Promise<boolean> => {
-  let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
-  console.debug(`%cBets:`, "background: #588BAE", bets)
-	
-	let booker_url: string
+const getBookerUrl = async (r_url: string): Promise<string> => {
   try {
-    let response = await axios.get(OlimpBet.url)
+    let response = await axios.get(r_url)
     if (response.status != 200)
-      throw Error(`Return status !=200: ${response.status}`)
+      throw Error(`Couldn't get bookmaker url: return status(${response.status}) != 200`)
 
     let $t = response.data.match(/(?<=direct_link = ').+(?=')/g)
     if (!$t) {
-      console.info("No event url")
-      return new Promise(r => r(false))
+      throw Error("No event url")
     }
 
-    booker_url = $t[0]
-
+    return new Promise(r => r($t[0]))
   } catch (e) {
     console.error(e)
-    return new Promise(r => r(false))
+    return new Promise(r => r(null))
   }
-	
+}
+
+/* Returns success of betting */
+export const betArb = async ({ bets }: Arb): Promise<boolean> => {
+  console.debug(`%cBets:`, "background: #588BAE", bets)
+
+  let OlimpBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "olimp")[0]
+  let PinnacleBet: Bet = bets.filter(b => b.bookmaker.toLowerCase() == "pinnacle")[0]
+
+  if (!OlimpBet || !PinnacleBet) return new Promise(r => r(false))
+
   let result = false
-  let olimp = new OlimpDriver(booker_url, OlimpBet.outcome)
+
+  let pinnacle_url = await getBookerUrl(PinnacleBet.url)
+  let olimp_url = await getBookerUrl(OlimpBet.url)
+  if (!olimp_url || !pinnacle_url) return new Promise(r => r(false))
+
+  let olimp: DriverInterface = new OlimpDriver()
+  let pinnacle: DriverInterface = new PinnacleDriver()
 
   TryBet: try {
-    let koef = await olimp.getReady()
+    olimp.setInfo(olimp_url, OlimpBet.outcome)
+    pinnacle.setInfo(pinnacle_url, PinnacleBet.outcome)
+
+    const inv_sum_calc = (k1: number, k2: number) => 1 / k1 + 1 / k2
+    const stakes_calc = (stake: number, inv_sum: number,
+      k1: number, k2: number) => [stake / (inv_sum * k1), stake / (inv_sum * k2)]
+
+    let inv_sum = inv_sum_calc(OlimpBet.koef, PinnacleBet.koef)
+		console.info(`${PinnacleBet.koef} ${OlimpBet.koef} inverse sum = ${inv_sum}`)
 		
-    if (koef < OlimpBet.koef) {
-      console.warn(`Koef changed from ${OlimpBet.koef} to ${koef}`)
+    let [olimp_apx_stake, pinnacle_apx_stake] =
+			stakes_calc(storage.get('stake'), inv_sum, OlimpBet.koef, PinnacleBet.koef)
+    // do the rounding
+
+    let pin_koef = await pinnacle.getReady(pinnacle_apx_stake)
+    let ol_koef = await olimp.getReady(olimp_apx_stake)
+
+    inv_sum = inv_sum_calc(ol_koef, pin_koef)
+    if (inv_sum >= 1) {
+      console.warn(`Koefs changed to not sufficient ${pin_koef} and ${ol_koef} inverse sum = ${inv_sum}`)
+      result = false
       break TryBet
     }
-    let result = await olimp.bet(storage.get('stake'))
+
+    let [olimp_stake, pinnacle_stake] =
+			stakes_calc(storage.get('stake'), inv_sum, ol_koef, pin_koef)
+
+		if (!await pinnacle.bet(pinnacle_stake)) {
+			result = false
+			break TryBet
+		}
+
+		if (!await olimp.bet(olimp_stake)) {
+			result = false
+			break TryBet
+		}
+		
   } catch (e) {
     console.error(e)
   }
   finally {
     olimp.release()
+		pinnacle.release()
   }
-	return new Promise(r => r(result))
+  return new Promise(r => r(result))
 }

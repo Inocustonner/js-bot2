@@ -2,6 +2,7 @@ import { local as storage2 } from "store2"
 import axios from "axios"
 import { promisePortConnection } from "../PortDriver"
 import { createTab, closeTab, tabLoadedFuture, deleteAllCookie } from "../ChromeShortcuts"
+import { DriverInterface } from "./DriverInterface"
 let storage = storage2.namespace('settings')
 
 type SOPair = [string, string]
@@ -22,7 +23,7 @@ const NULL_PROMISE = (): Promise<void> => new Promise<void>(r => r())
 const execOlimpScript = (tabid: number) =>
   chrome.tabs.executeScript(tabid, { file: "content_script/olimp.js" })
 
-export class OlimpDriver {
+export class OlimpDriver extends DriverInterface {
   #so_pairs: SOPair[]
   #port: chrome.runtime.Port
   #auth_cnt: number
@@ -31,30 +32,29 @@ export class OlimpDriver {
   #url: string
   #outcome: string
 
-	#finished_f: boolean = false // set when received either 'success' of 'fail' from olimp
-	
+  #finished_f: boolean = false // set when received either 'success' of 'fail' from olimp
+
   #ready_promise_callback: Function = null
-	#bet_promise_callback: Function = null
+  #bet_promise_callback: Function = null
   #err: Function = null
 
   // NO THROW IN CONSTRUCTOR
-  constructor(booker_url: string,
-    outcome: string) {
-    this.getReady = this.getReady.bind(this)
-    this.bet = this.bet.bind(this)
-    this.release = this.release.bind(this)
+  constructor() {
+    super() // automatically binds this to functions it exports as abstract
     this.handler = this.handler.bind(this)
+  }
 
-    console.info(`Olimp url: ${booker_url}`)
+  public setInfo(booker_url: string, outcome: string) {
+    console.info(`Olimp: url ${booker_url}`)
     this.#url = booker_url
     this.#outcome = outcome
   }
 
-  async handler(rp: RequestPacket) {
+  private async handler(rp: RequestPacket) {
     switch (rp.request) {
       case "success": {
-				this.#finished_f = true
-				
+        this.#finished_f = true
+
         this.#bet_promise_callback(true)
         console.info(
           "%cOlimp succeded",
@@ -63,21 +63,21 @@ export class OlimpDriver {
       } break
 
       case "fail": {
-				this.#finished_f = true
-				
+        this.#finished_f = true
+
         if (this.#bet_promise_callback) {
-					if (rp.error_code != ErrorCode.Released) // if it is not forced by driver it self
-						console.warn(rp.comment)
-					
+          if (rp.error_code != ErrorCode.Released) // if it is not forced by driver it self
+            console.warn(rp.comment)
+
           this.#bet_promise_callback(false)
         }
         else {
-          this.#err(`Olimp failed: ${rp.comment}`)					
-				}
+          this.#err(`Olimp: failed ${rp.comment}`)
+        }
       } break
 
       case "getInfo": {
-        console.info('Olimp requesting info', this.#so_pairs, this.#outcome)
+        console.info('Olimp: requesting info', this.#so_pairs, this.#outcome)
         this.#port.postMessage({ so_pairs: this.#so_pairs, outcome: this.#outcome })
       } break
 
@@ -91,8 +91,8 @@ export class OlimpDriver {
         } else this.#auth_cnt += 1
         console.info('Olimp: returning account credentials')
         this.#port.postMessage({
-          login: storage.get("login"),
-          pwd: storage.get("pwd")
+          login: storage.get("loginOlimp"),
+          pwd: storage.get("pwdOlimp")
         })
 
         let port_promise = promisePortConnection('olimp_port')
@@ -107,7 +107,7 @@ export class OlimpDriver {
   }
 
   // koef
-  getReady(): Promise<number> {
+  public getReady(aproximate_stake: number): Promise<number> {
     return new Promise(async (r, err) => {
 
       // get so pairs
@@ -117,7 +117,7 @@ export class OlimpDriver {
       )).data
       if (resp.error)
         throw Error(
-          `Error in determing outcome for ${this.#outcome}: ${resp.error.reason}`
+          `Olimp: Error in determing outcome for ${this.#outcome}: ${resp.error.reason}`
         )
 
       this.#so_pairs = resp as SOPair[]
@@ -135,7 +135,7 @@ export class OlimpDriver {
     })
   }
 
-  bet(stake: number): Promise<boolean> {
+  public bet(stake: number): Promise<boolean> {
     return new Promise((r, err) => {
       this.#bet_promise_callback = r
       this.#err = err
@@ -143,15 +143,17 @@ export class OlimpDriver {
     })
   }
 
-  release(): Promise<void> {
-		return new Promise<void>(r => {
-			if (this.#finished_f) { // if releasing after full betting cycle
-				r() // just complete promise to close openned tab
-			}	else { // if releasing after ready
-				this.#bet_promise_callback = r
-				// send rp to fail betting, and close open busket
-				this.#port.postMessage({ error_rp: { request: 'fail', comment: 'forced closing', error_code: ErrorCode.Released } })			
-			}
-		}).finally(() => closeTab(this.#tabid))
+  public release(): Promise<void> {
+    return new Promise<void>(r => {
+      if (this.#finished_f) { // if releasing after full betting cycle
+        r() // just complete promise to close openned tab
+      } else { // if releasing after ready
+        this.#bet_promise_callback = r
+        // send rp to fail betting, and close open busket
+        this.#port.postMessage({ error_rp: { request: 'fail', comment: 'forced closing', error_code: ErrorCode.Released } })
+      }
+    }).finally(() => {
+      if (this.#tabid) closeTab(this.#tabid)
+    })
   }
 }
