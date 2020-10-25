@@ -15,7 +15,7 @@ const messageManager = async () => {
     let betdata = await control_queue.get()
     let events = await filterBetData(betdata)
     console.debug("Clear events", events)
-		running_bets = true
+    running_bets = true
     for (let event of events) {
       // if event has been complited stop iteration
       for (let arb of event.arbs) {
@@ -23,8 +23,11 @@ const messageManager = async () => {
         if (event.completed) break
       }
     }
-		running_bets = false
-    applyEvents(events);
+    running_bets = false
+    applyEvents(events)
+    if (storage.get('settings.time_gap') > 0)
+      await new Promise(r =>
+        setTimeout(r, storage.get('settings.time_gap')))
   }
 }
 
@@ -67,11 +70,11 @@ const async_sleep = (sec: number): Promise<void> => {
 
 const freeResources = function(): boolean {
   console.clear()
-	if (!running_bets) {
-		deleteAllCookie()
-		return true
-	}
-	else return false
+  if (!running_bets) {
+    deleteAllCookie()
+    return true
+  }
+  else return false
 }
 
 // window.onload = main

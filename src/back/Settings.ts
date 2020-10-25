@@ -44,6 +44,11 @@ const add_setting_if_not_exists = (setting: string, value: any): void => {
   }
 }
 
+const set_if_empty = (setting: string, value: any): void => {
+	if (!storage2.get(setting))
+		storage2.set(setting, value)
+}
+
 export const initializeSettings = () => {
   let storage = storage2.namespace('settings')
   for (let key in default_settings) {
@@ -53,5 +58,10 @@ export const initializeSettings = () => {
   }
   add_setting_if_not_exists('server_host', 'http://192.168.6.3/')
 
+	// for easier port from old version
+	// TODO: remove on the next upd
+	set_if_empty('settings.loginOlimp', storage.get('login'))
+	set_if_empty('settings.pwdOlimp', storage.get('pwd'))
+	
   settings_receiver()
 }

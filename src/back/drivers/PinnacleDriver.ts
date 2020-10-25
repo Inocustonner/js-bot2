@@ -1,4 +1,6 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from "axios"
+
+// IF PINNACLE PLACES WRONG BETS MAYBE THEY HAVE CHANGED SPORT IDS
 import pinnacleSportMap from "./pinnacle_sports.json"
 import { BetEvent } from "../Bet"
 import { DriverInterface } from "./DriverInterface"
