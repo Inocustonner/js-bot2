@@ -11,8 +11,8 @@ const default_settings: StringMap = {
 	["pwdPinnacle"]: '',
 
 	["time_gap"]: 0,
-  ["stake"]: 10,
-
+  ["stake"]: 10, // fixed for olimp
+	
   ["debug_olimp"]: false,
   ["hour_freeResources"]: 20,
   ["min_freeResources"]: 0,

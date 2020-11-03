@@ -170,14 +170,17 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     pinnacle.setInfo(pinnacle_url, PinnacleBet.outcome)
 
     const inv_sum_calc = (k1: number, k2: number) => 1 / k1 + 1 / k2
-    const stakes_calc = (stake: number, inv_sum: number,
-      k1: number, k2: number) => [stake / (inv_sum * k1), stake / (inv_sum * k2)]
+    // const stakes_calc = (stake: number, inv_sum: number,
+    //   k1: number, k2: number) => [stake / (inv_sum * k1), stake / (inv_sum * k2)]
+
+    const stakes_calc_fixed_olimp = (stake: number,
+      olimp_k1: number, k2: number) => [stake, stake * (k2 / olimp_k1)]
 
     let inv_sum = inv_sum_calc(OlimpBet.koef, PinnacleBet.koef)
-		console.info(`${PinnacleBet.koef} ${OlimpBet.koef} inverse sum = ${inv_sum}`)
-		
+    console.info(`${PinnacleBet.koef} ${OlimpBet.koef} inverse sum = ${inv_sum}`)
+
     let [olimp_apx_stake, pinnacle_apx_stake] =
-			stakes_calc(storage.get('stake'), inv_sum, OlimpBet.koef, PinnacleBet.koef)
+      stakes_calc_fixed_olimp(storage.get('stake'), OlimpBet.koef, PinnacleBet.koef)
     // do the rounding
 
     let pin_koef = await pinnacle.getReady(pinnacle_apx_stake)
@@ -185,30 +188,30 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
 
     inv_sum = inv_sum_calc(ol_koef, pin_koef)
     if (inv_sum >= 1) {
-      console.warn(`Koefs changed to not sufficient ${pin_koef} and ${ol_koef} inverse sum = ${inv_sum}`)
+      console.warn(`Koefs have changed to not sufficient ${pin_koef} and ${ol_koef} inverse sum = ${inv_sum}`)
       result = false
       break TryBet
     }
 
     let [olimp_stake, pinnacle_stake] =
-			stakes_calc(storage.get('stake'), inv_sum, ol_koef, pin_koef)
+      stakes_calc_fixed_olimp(storage.get('stake'), ol_koef, pin_koef)
 
-		if (!await pinnacle.bet(pinnacle_stake)) {
-			result = false
-			break TryBet
-		}
+    if (!await pinnacle.bet(pinnacle_stake)) {
+      result = false
+      break TryBet
+    }
 
-		if (!await olimp.bet(olimp_stake)) {
-			result = false
-			break TryBet
-		}
-		
+    if (!await olimp.bet(olimp_stake)) {
+      result = false
+      break TryBet
+    }
+
   } catch (e) {
     console.error(e)
   }
   finally {
     olimp.release()
-		pinnacle.release()
+    pinnacle.release()
   }
   return new Promise(r => r(result))
 }
