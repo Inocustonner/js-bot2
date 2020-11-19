@@ -1,7 +1,7 @@
 import { local as storage2 } from "store2"
 import axios from "axios"
 import { promisePortConnection } from "../PortDriver"
-import { createTab, closeTab, tabLoadedFuture, deleteAllCookie } from "../ChromeShortcuts"
+import { createTab, closeTab, tabLoadedFuture, deleteAllCookie, removeIfExists } from "../ChromeShortcuts"
 import { DriverInterface } from "./DriverInterface"
 let storage = storage2.namespace('settings')
 
@@ -153,7 +153,7 @@ export class OlimpDriver extends DriverInterface {
         this.#port.postMessage({ error_rp: { request: 'fail', comment: 'forced closing', error_code: ErrorCode.Released } })
       }
     }).finally(() => {
-      if (this.#tabid) closeTab(this.#tabid)
+      if (this.#tabid) removeIfExists(this.#tabid)
     })
   }
 }

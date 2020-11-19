@@ -1,3 +1,16 @@
+const getTabs = async (): Promise<Array<chrome.tabs.Tab>> => {
+	return new Promise(r => chrome.tabs.query(null, r))
+}
+
+export const removeIfExists = async (tabid: number): Promise<void> => {
+	return new Promise (async r => {
+		const tabs = await getTabs()
+		for (let tab of tabs) {
+			if (tab.id == tabid) chrome.tabs.remove(tabid)
+		}
+	})
+}
+
 export const createTab = async (url: string): Promise<chrome.tabs.Tab> => {
   return new Promise(r => {
     chrome.tabs.create({ url: url }, r)

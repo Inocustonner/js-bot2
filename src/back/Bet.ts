@@ -174,7 +174,7 @@ export const betArb = async ({ bets }: Arb): Promise<boolean> => {
     //   k1: number, k2: number) => [stake / (inv_sum * k1), stake / (inv_sum * k2)]
 
     const stakes_calc_fixed_olimp = (stake: number,
-      olimp_k1: number, k2: number) => [stake, stake * (k2 / olimp_k1)]
+      olimp_k1: number, k2: number) => [stake, stake * (olimp_k1 / k2)]
 
     let inv_sum = inv_sum_calc(OlimpBet.koef, PinnacleBet.koef)
     console.info(`${PinnacleBet.koef} ${OlimpBet.koef} inverse sum = ${inv_sum}`)
