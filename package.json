@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "async-mutex": "^0.2.4",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "jquery": "^3.5.1",
     "store2": "^2.12.0"
   }
